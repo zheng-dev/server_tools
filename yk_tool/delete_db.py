@@ -16,7 +16,7 @@ def main():
        current_path = os.path.dirname(__file__)
        r=os.chdir(current_path)
        now=time.localtime(time.time())
-       sys.stdout = open('output{0}{1}.txt'.format(now.tm_mon,now.tm_mday), 'w+')
+       sys.stdout = open('output.txt'.format(now.tm_mon,now.tm_mday), 'w+')
     #    with open("a.txt",'a+') as f:  
     #        size=f.seek(0,os.SEEK_END) 
     #        if size>2024:#2K
@@ -82,7 +82,7 @@ def install_timer():
             #初始配置
             with open(_DB_CFG_,'w+',encoding='utf-8') as f:
                 if f:
-                    f.writelines(["#配置注释可以是#开关的行\n","#本配置必需是utf8文件\n","#db所在路径的配置,可以是多个项目如\n","#F:\\snk_work\\server_code\\alpha\\game_alpha\n"])
+                    f.writelines(["#配置注释可以是#开头的行\n","#本配置必需是utf8文件\n","#db所在路径的配置,可以是多个项目如\n","#F:\\snk_work\\server_code\\alpha\\game_alpha\n"])
             print("win timer ok:{0},init cfg={1}".format(r,_DB_CFG_))
 
        

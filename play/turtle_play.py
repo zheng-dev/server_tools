@@ -27,12 +27,19 @@ def five_star():
     for _ in range(5):
         turtle.forward(200)
         turtle.right(144)
+    
+    turtle.penup()
+    turtle.goto(-100,-120)    
+    turtle.pendown()
+    turtle.circle(110)
+
     turtle.end_fill()
     time.sleep(2)
 
     turtle.penup()
     turtle.goto(-150,-120)
     turtle.color("violet")
+   
     turtle.write("Done",font=("Arial",40,'normal'))
     turtle.mainloop()
 

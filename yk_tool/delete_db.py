@@ -70,25 +70,38 @@ def del_tab_bak_dir(dbPath):
         os.chdir("../")
     return
 
+def init_cfg(r:any,osStr:str):
+    #初始配置
+    with open(_DB_CFG_,'w+',encoding='utf-8') as f:
+        if f:
+            f.writelines(["#配置注释可以是#开头的行\n","#本配置必需是utf8文件\n","#db所在路径的配置,可以是多个项目如\n","#F:\\snk_work\\server_code\\alpha\\game_alpha\n"])
+    print("{2} timer ok:{0},请手动修改db配置=>{1}".format(r,_DB_CFG_,osStr))
+    return None
+
+
+
 def install_timer():
     """根据系统安装定时器安装"""
     if sys.platform=="win32":
         #currentPath = os.getcwd().replace('\\','/')    # 获取当前路径
         #SCHTASKS /DELETE /TN "yk_db_bak_del"
-        r=os.system("schtasks /create /sc minute /mo 1 /tn \"yk_db_bak_del\" /tr pyw\" {0}\"".format(__file__))
+        (path,exeName)=os.path.split(sys.executable)
+        exePath=path+"/pythonw.exe"
+        if not os.path.exists(exePath):
+            exePath=sys.executable
+
+        r=os.system("schtasks /create /sc minute /mo 1 /tn \"yk_db_bak_del\" /tr {0}\" {1}\"".format(exePath,__file__))
         if r==1:
             print("定时器失败,确认是否管理员权限:{0}".format(r))
         else:            
-            #初始配置
-            with open(_DB_CFG_,'w+',encoding='utf-8') as f:
-                if f:
-                    f.writelines(["#配置注释可以是#开头的行\n","#本配置必需是utf8文件\n","#db所在路径的配置,可以是多个项目如\n","#F:\\snk_work\\server_code\\alpha\\game_alpha\n"])
-            print("win timer ok:{0},init cfg={1}".format(r,_DB_CFG_))
+            init_cfg(r,"win")
 
        
         pass
     else:
-        print("linux timer:")
+        print("*/10 * * * * {0} {1}\n".format(sys.executable,__file__))
+        print("请手动执行命令在定时器中增加上面内容->contab -e")
+        init_cfg(0,"linux")
         pass
     return 1
 

@@ -46,5 +46,5 @@ def _after_find():
         pass
     return
 
-
-main()
+if __name__=='__main__':
+    main()

@@ -5,7 +5,6 @@
 import os,shutil
 
 import sys
-import time
 
 _DB_CFG_="db_path.cfg"
 def main():
@@ -15,13 +14,7 @@ def main():
    else:
        current_path = os.path.dirname(__file__)
        r=os.chdir(current_path)
-       now=time.localtime(time.time())
-       sys.stdout = open('output.txt'.format(now.tm_mon,now.tm_mday), 'w+')
-    #    with open("a.txt",'a+') as f:  
-    #        size=f.seek(0,os.SEEK_END) 
-    #        if size>2024:#2K
-    #             f.seek(0)                                  
-    #        f.write("done={0}=={1}={2},size={3}\n".format(time.time(),current_path,r,size))
+       sys.stdout = open('output.txt', 'w+')
        del_cfg_tab()#定时清理中
    
 
@@ -42,7 +35,7 @@ def del_cfg_tab():
         print("err:{0},{1}".format(e.strerror,e.filename))
     return 0
 
-def del_tab_bak_dir(dbPath):
+def del_tab_bak_dir(dbPath:str):
     """删除表目录下的备份文件夹"""
     # 强行到指定的db目录去操作
     try:
@@ -70,7 +63,7 @@ def del_tab_bak_dir(dbPath):
         os.chdir("../")
     return
 
-def init_cfg(r:any,osStr:str):
+def init_cfg(r:int|str,osStr:str):
     #初始配置
     with open(_DB_CFG_,'w+',encoding='utf-8') as f:
         if f:

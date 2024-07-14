@@ -9,7 +9,7 @@ def main():
 
 
 def taiyanhua():
-    #"""太阳花"""
+    #"""sun flower"""
     turtle.color("red","yellow")
     turtle.begin_fill()
     for _ in range(50):
@@ -19,7 +19,7 @@ def taiyanhua():
     turtle.mainloop()
 
 def five_star():
-    """五角星
+    """five star
     """
     turtle.pensize(5)
     turtle.color("red","blue")

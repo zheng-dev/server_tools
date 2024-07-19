@@ -25,3 +25,5 @@ index-url = https://pypi.tuna.tsinghua.edu.cn/simple
 [install]
 trusted-host=mirrors.aliyun.com
 ```
+
+py的双下划线是私有函数或变量，但解释器是不会强检查的，ide处理

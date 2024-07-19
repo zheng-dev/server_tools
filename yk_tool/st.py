@@ -9,6 +9,7 @@ import sys
 
 
 def main():
+    #os.system("clear")
     current_path = os.path.dirname(__file__)
     os.chdir(current_path)
     a=False
@@ -19,7 +20,7 @@ def main():
              line=f.readline()
              if line=="":
                     break
-             elif line[:3]=="===":#A;B分组线
+             elif line[:3]=="===":#A;B分组线c
                  a=True
              else:
                  if a:
@@ -29,13 +30,16 @@ def main():
                  pass
     old=0
     for i in cA:
-        try:
-            cB.index(i)
+        if i in cB:
             old+=1
             print("{}".format(i))
-            pass
-        except:
-            pass
+        # try:
+        #     cB.index(i)
+        #     old+=1
+        #     print("{}".format(i))
+        #     pass
+        # except:
+        #     pass
     all=len(cB)
     add=all-old
     print("新加{0},老的{1},总的{2}".format(add,old,len(cB)))

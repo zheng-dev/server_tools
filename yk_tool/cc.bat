@@ -1,6 +1,7 @@
 @echo off
 ::设置为utf8
 chcp 65001
+set p=%cd%
 ::"C:\Program Files\erl10.7\bin\erlc" z_compile.erl sync.erl cmd_tool.erl
 ::erl -s z_compile cfg_check "F:\snk_work\server_code\alpha\game_alpha\plugin\cfg\.cfg" ".cfg,.a," -s init stop
 echo ===done===

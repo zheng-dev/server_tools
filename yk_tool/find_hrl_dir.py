@@ -15,17 +15,17 @@ def main():
    else:
        dir="."
 
-   _find_dir("",dir)
-   _after_find()
+   __find_dir("",dir)
+   __after_find()
    return
 
 #查找出头目录到全局变量中
-def _find_dir(Prent:str,path:str)->None:
+def __find_dir(Prent:str,path:str)->None:
     os.chdir(path)
     isHrlDir=False
     for f in os.listdir("."):
         if os.path.isdir(f):
-            _find_dir(Prent+path+"/",f)
+            __find_dir(Prent+path+"/",f)
         elif isHrlDir:
             continue
         else:
@@ -37,7 +37,7 @@ def _find_dir(Prent:str,path:str)->None:
     os.chdir("../")
     return
 #使用全局变量的目录结果生成文件
-def _after_find():
+def __after_find():
     global _GFindRet
     with open("hrl.txt",'w+') as f:
         for i in _GFindRet:

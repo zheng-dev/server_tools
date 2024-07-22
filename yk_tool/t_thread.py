@@ -10,7 +10,7 @@ def main():
     t2=mThread(2,"t2",4)
     t.start()
     t2.start()
-    time.sleep(30)
+    #time.sleep(30)
     t.join()
     t.join()
     print("exit")

@@ -74,9 +74,7 @@ def __after_find():
     test=et.SubElement(m,"test")
     test.text='33'
     test.attrib['bb']='c'
-
-
-    tree.write('aa.xml')
+    tree.write('aa.iml',"UTF-8")
 
     with open("hrl.txt",mode='w+') as f:
         for i in _GFindRet:

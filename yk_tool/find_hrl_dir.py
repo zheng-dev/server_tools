@@ -64,11 +64,19 @@ def __after_find():
     import xml.etree.ElementTree as et
     tree=et.parse(__GAME)
     p_root=tree.getroot()
-    for m in p_root.findall('movie'):
-        t=m.find('type').text
-        year=m.find('format').text
-        print("row:{0},{1}".format(t,year))    
+    # for m in p_root.findall('movie'):
+    #     t=m.find('type').text
+    #     year=m.find('format').text
+    #     print("row:{0},{1}".format(t,year))    
     
+    m=p_root.find('component')
+    print(m)
+    test=et.SubElement(m,"test")
+    test.text='33'
+    test.attrib['bb']='c'
+
+
+    tree.write('aa.xml')
 
     with open("hrl.txt",mode='w+') as f:
         for i in _GFindRet:

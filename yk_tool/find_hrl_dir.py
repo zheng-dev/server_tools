@@ -82,12 +82,12 @@ def __test_xml():
     
     m=p_root.find('component')
     print(m)
-    test=et.SubElement(m,"test")
+    test=et.SubElement(m,"test",{'cc':'2024','e':'07'},z='hello',z2='2')
     test.text='33'
     test.attrib['bb']='c'
     tree.write('aa.iml',"UTF-8",True,None,'xml')
 
 if __name__=='__main__':
-    main()
-    #__test_xml()
+    #main()
+    __test_xml()
     pass

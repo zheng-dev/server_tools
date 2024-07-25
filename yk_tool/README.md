@@ -27,3 +27,17 @@ trusted-host=mirrors.aliyun.com
 ```
 
 py的双下划线是私有函数或变量，但解释器是不会强检查的，ide处理
+
+设置py -m的检查目录
+```
+#win
+setx PYTHONPATH D:\path\to\your/directory
+
+#linix
+export PYTHONPATH=/data/game_server/script
+
+#查看设置结果
+py -c "import sys; print(sys.path)"
+#todo 
+python -c "import sys;sys.path.append('/data/game_server/script')"
+```

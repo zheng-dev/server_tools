@@ -4,7 +4,11 @@
 # 运行方式：python flog.py 
 import os,shutil
 
-import sys,glob
+import sys,glob,signal
+
+def sig_hand(a,b):
+    print("ctr+c exit")
+    sys.exit(0)
 
 def main():
    if len(sys.argv)>1:
@@ -28,6 +32,7 @@ def find():
    endStr=sys.argv[3]
    print(sys.argv[1],startStr,endStr,files)
 
+   disNum=0
    for f in files:
        with open(f,'r+',-1,'utf8') as fPtr:
            lineNum=0
@@ -37,7 +42,21 @@ def find():
             if line=="":
                 break
             i=line.find(startStr)
+
+            if disNum==20:
+                while True:
+                    moreOrLine=input("more or line")
+                    try:
+                        LNum=int(moreOrLine.strip())
+                        if LNum<=lineNum and LNum>0:
+                            d_line_(f,LNum)
+                        else:
+                            break    
+                    except:
+                        break    
+                disNum=0
             if i>-1:
+                disNum+=1
                 i2=line.find(endStr,i)
                 print("{0}==>{1}-->{2}".format(line[i:i2+1],f,lineNum))
             pass
@@ -46,6 +65,10 @@ def find():
 def d_line():
     file=sys.argv[2]
     lineNumArg=int(sys.argv[3])
+    d_line_(file,lineNumArg)
+    return
+
+def d_line_(file:str,lineNumArg:int):
     with open(file,'r+',-1,'utf8') as fPtr:
         lineNum=0
         while fPtr:
@@ -56,8 +79,9 @@ def d_line():
             if lineNum==lineNumArg:
                 print(line)
                 return 
-    return   
+    return
 
 if __name__=='__main__':
+    signal.signal(signal.SIGINT,sig_hand)
     main()
     pass

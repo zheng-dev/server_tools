@@ -87,7 +87,7 @@ def analyse():
         condLineNum=0 #满足过虑条件行数
         kvList={} #结果
         while fPtr:
-            
+            progress_no_sum(lineNum)
             line=fPtr.readline()
             if line=="":
                 break
@@ -126,7 +126,7 @@ def analyse():
                 # if lineNum==2:
                 #     break
             condLineNum+=1        
-        
+        progress_no_sum_after()
         print("总条数{0};100ms的条数{1}".format(lineNum,condLineNum))
         #print(kvList)  
         #print('事件mf | 总次数 | 100m的次数 | 平均用时 | 最大用时 | 原日志')
@@ -142,6 +142,37 @@ def analyse():
                 writer.writerow([key,oldTimes,old100Times,round(oldAccMs/oldTimes),oldMaxMs,oldLine.strip()])  
                 #print("{0} | {1} | {5} | {2} | {3} | {4}".format(key,oldTimes,round(oldAccMs/oldTimes),oldMaxMs,oldLine.strip(),old100Times))    
     return
+
+##进度-有总量的
+def progress(max:int,currIndex:int):
+    #求10分之N
+    rate=100
+    curr=round(currIndex/max*rate)
+    print("\r"+"#"*curr+"_"*(rate-curr),end="")
+##无总量的,每100数刷一下
+def progress_no_sum(currIndex:int):
+    rate=10000
+    if (currIndex % rate)==0:
+        if ((currIndex)/rate %2)==0:
+            f='/'
+        else:
+            f='\\'    
+        print("\r\033[1;32m curr:{0}  {1}  ".format(currIndex,f),end="")
+##进度完成
+def progress_no_sum_after():
+#     字色              背景              颜色
+# ---------------------------------------
+# 30                40              黑色
+# 31                41              紅色
+# 32                42              綠色
+# 33                43              黃色
+# 34                44              藍色
+# 35                45              紫紅色
+# 36                46              青藍色
+# 37                47              白色
+    print("\033[1;37m")
+
+##
 if __name__=='__main__':
     signal.signal(signal.SIGINT,sig_hand)
     #main()

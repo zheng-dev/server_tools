@@ -188,9 +188,76 @@ class progress:
     # 37                47              白色
         print("\033[1;37m \n=done=")
 
+def test():
+    import time
+    
+    print("\033[20A\033[?25l",end="")
+    for i in range(60):
+        time.sleep(1)
+        print("\033[2J",end="")
+        print("\033[31m 红色{0}字 \033[m".format(i))
+##不用回车        
+import tkinter
+from tkinter import ttk
+ 
+ 
+def xFunc1(event):
+    print(f"事件触发键盘输入:{event.char},对应的ASCII码:{event.keycode}")
+ 
+def win():
+    win = tkinter.Tk()
+    win.title("Kahn Software v1")    # #窗口标题
+    win.geometry("600x500+200+20")   # #窗口位置500后面是字母x
+    '''
+    响应所有事件(键盘)
+    <Key>   所有键盘按键会触发
+    '''
+    xLabel = tkinter.Label(win, text="KAHN Hello world")
+    xLabel.focus_set()
+    xLabel.pack()
+    xLabel.bind("<Key>", xFunc1)
+    
+    win.mainloop()   # #窗口持久化
+
+#win
+def cmd():
+    import msvcrt  
+    print("按任意键继续...")  
+    while True:  
+        if msvcrt.kbhit():  # 检查是否有按键被按下  
+            char = msvcrt.getch().decode()  # 读取按键并解码为字符  
+            if char == '\r':  # 处理回车键  
+                break  
+            print("你按了:", char)
+def shell():
+        
+    # 使用函数  
+    char = get_single_char()  
+    print(f"You pressed: {char}")
+  
+def get_single_char():  
+        import sys  
+        import tty  , termios  
+        # 保存旧的终端设置  
+        fd = sys.stdin.fileno()  
+        old_settings = termios.tcgetattr(fd)  
+    
+        # 设置新终端设置：无回显，非阻塞  
+        try:  
+            tty.setraw(sys.stdin.fileno())  
+            ch = sys.stdin.read(1)  
+        finally:  
+            # 恢复旧的终端设置  
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)  
+    
+        return ch  
+
+
 ##
 if __name__=='__main__':
     signal.signal(signal.SIGINT,sig_hand)
     #main()
-    analyse()
+    #analyse()
+    #test()
+    cmd()
     pass

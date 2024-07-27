@@ -170,7 +170,10 @@ class progress:
                 f='/'
             else:
                 f='\\'    
-            print("\r\033[1;32m curr:{0}  {1}  ".format(currIndex,f),end="")
+            print("\r\033[1;32m curr:{0}  {1}  \033[m ".format(currIndex,f),end="")
+
+    def end(self):
+        del self        
     ##进度完成
     def __del__(self):
     #     字色              背景              颜色

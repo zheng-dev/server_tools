@@ -38,6 +38,6 @@ export PYTHONPATH=/data/game_server/script
 
 #查看设置结果
 py -c "import sys; print(sys.path)"
-#todo 
-python -c "import sys;sys.path.append('/data/game_server/script')"
+#临时设置 
+py -c "import sys;sys.path.append('F:\server_tools\yk_tool');print(sys.path)"
 ```

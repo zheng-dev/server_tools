@@ -33,13 +33,7 @@ def main():
         if i in cB:
             old+=1
             print("{}".format(i))
-        # try:
-        #     cB.index(i)
-        #     old+=1
-        #     print("{}".format(i))
-        #     pass
-        # except:
-        #     pass
+
     all=len(cB)
     add=all-old
     print("新加{0},老的{1},总的{2}".format(add,old,len(cB)))

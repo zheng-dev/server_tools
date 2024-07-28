@@ -6,10 +6,12 @@
 import sys
 
 def main():
+   sig_hand()
    if len(sys.argv)>1:
        if sys.argv[1]=="-line":
            d_line()
-           pass
+       elif sys.argv[1]=="-fx":
+           analyse()    
        else:
            Find().find()
    else:
@@ -17,7 +19,9 @@ def main():
 从匹配的文件中查找内容，显示所在文件名和行数
 py -m flog log/fight.l* {use_mill }      
 显示指定文件的行数的内容
-py -m flog -line xxxx.log 3                                       
+py -m flog -line xxxx.log 3     
+调用日志分析事务                                               
+py -m flog -fx              
              ''')
    return
 #检查
@@ -33,7 +37,7 @@ class Find:
         startStr= sys.argv[2]
         endStr=sys.argv[3]
         print(sys.argv[1],startStr,endStr,files)
-        #整理出结果[(findStr，file,lineNum)]
+        #整理出结果[(sortField,findStr，file,lineNum)]
         for f in files:
             with open(f,'r',-1,'utf8') as fPtr:
                 lineNum=0
@@ -46,11 +50,31 @@ class Find:
                     if i>-1:
                         i2=line.find(endStr,i)
                         if i2>-1:
-                            self.retList.append((line[i:i2+1],f,lineNum))
-                    pass
+                            txt=line[i:i2+1]    
+                            self.retList.append((self.__sort_format(txt),txt,f,lineNum))
         #显示
-        self.retList.sort() 
+        try:
+            self.retList.sort()
+        except:
+            pass
+        print(self.retList) 
         self.display() if self.calc_page() else print("no match")
+    def __sort_format(self,str1:str):
+        int1=0
+        i=0
+        #TODO 小数、科学计数
+        for char in str1:
+            n=ord(char)
+            isNum=n>=48 and n<=57
+            if isNum and int1==0:
+                int1=i
+                i+=1
+            elif (not isNum) and int1!=0:
+                return int(str1[int1:i])
+            else:
+                i+=1
+        return str1    
+
 
     #计算页码       
     def calc_page(self):
@@ -66,15 +90,15 @@ class Find:
         if self.currPage<=self.allPage:
             self.page=self.retList[(self.currPage-1)*self.rowNum4Page:self.currPage*self.rowNum4Page]
             i=1
-            for (findStr,file,lineNum) in self.page:
+            for (sort,findStr,file,lineNum) in self.page:
                 print(f"{i}:{findStr}-->{file}:{lineNum}")
-                pass
+                i+=1
         print(f"页码{self.currPage}/{self.allPage} 每页{self.rowNum4Page}条")
         #用户操作
         self.cmd()
 
     def cmd(self):
-        cmd=input("下一页(n);前一页(b);显示指定原内容(d 条目id)")
+        cmd=input("下一页(n);前一页(b);反排序(s);显示指定原内容(d 条目id);退出(q):")
         cmd2=cmd.strip()
         if cmd2=='b' and self.currPage>2:
             self.currPage-=1
@@ -82,19 +106,26 @@ class Find:
         elif cmd2=='n' and self.currPage<self.allPage:
             self.currPage+=1
             self.display()
+        elif cmd2=='s':
+            self.retList.reverse()
+            self.display()
+        elif cmd2=='q':
+            pass        
         elif cmd2[:2]== 'd ':
             try:
                 line=int(cmd2[2:])
                 if line>=1 and line<=self.rowNum4Page:
-                    (findStr,file,lineNum)=self.page[line-1]
+                    (sortF,findStr,file,lineNum)=self.page[line-1]
                     d_line_(file,lineNum)
-                    pass
+                    self.cmd()
                 else:
                     raise("error")
             except:
-                print(f"输入无效:{cmd2}")    
+                print(f"输入无效:{cmd2}")
+                self.cmd()    
         else:
-            print(f"输入无效:{cmd2}")   
+            print(f"输入无效:{cmd2}") 
+            self.cmd()    
 
 #显示行
 def d_line():
@@ -243,9 +274,7 @@ def sig_hand():
     signal.signal(signal.SIGINT,a1)
     
 ##
-if __name__=='__main__':
-    sig_hand()
-    #main()
-    #analyse()
-    test()
+if __name__=='__main__':    
+    main()
+    #test()
     pass

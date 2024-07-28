@@ -57,7 +57,7 @@ class Find:
             self.retList.sort()
         except:
             pass
-        print(self.retList) 
+        #print(self.retList) 
         self.display() if self.calc_page() else print("no match")
     def __sort_format(self,str1:str):
         int1=0

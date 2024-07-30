@@ -32,12 +32,14 @@ class Find:
     rowNum4Page=20#每页显示条数
     page=[]#当前页内容
     def find(self):
-        import glob
+        import glob,time
+        print(f"file:{time.time()}")
         files=glob.glob(sys.argv[1])   
         startStr= sys.argv[2]
         endStr=sys.argv[3]
         print(sys.argv[1],startStr,endStr,files)
         #整理出结果[(sortField,findStr，file,lineNum)]
+        pro=Progress()
         for f in files:
             with open(f,'r',-1,'utf8') as fPtr:
                 lineNum=0
@@ -51,12 +53,16 @@ class Find:
                         i2=line.find(endStr,i)
                         if i2>-1:
                             txt=line[i:i2+1]    
-                            self.retList.append((self.__sort_format(txt),txt,f,lineNum))
+                            self.retList.append((-len(txt),txt,f,lineNum))
+                    pro.progress_no_sum()        
+        del pro
+        print(f"clear:{time.time()}")
         #显示
         try:
             self.retList.sort()
         except:
             pass
+        print(f"sort:{time.time()}")
         #print(self.retList) 
         self.display() if self.calc_page() else print("no match")
     def __sort_format(self,str1:str):
@@ -100,7 +106,7 @@ class Find:
     def cmd(self):
         cmd=input("下一页(n);前一页(b);反排序(s);显示指定原内容(d 条目id);退出(q):")
         cmd2=cmd.strip()
-        if cmd2=='b' and self.currPage>2:
+        if cmd2=='b' and self.currPage>1:
             self.currPage-=1
             self.display()
         elif cmd2=='n' and self.currPage<self.allPage:
@@ -173,9 +179,9 @@ def clear_data()->tuple[int, int, dict]:
         lineNum=0 #总条数
         condLineNum=0 #满足过虑条件行数
         kvList={} #结果
-        pro=progress()
+        pro=Progress()
         while fPtr:
-            pro.progress_no_sum(lineNum)
+            pro.progress_no_sum()
             line=fPtr.readline()
             if line=="":
                 break
@@ -215,26 +221,29 @@ def clear_data()->tuple[int, int, dict]:
     return (lineNum,condLineNum,kvList)         
 
 ##进度-有总量的
-def progress(max:int,currIndex:int):
+def Progress(max:int,currIndex:int):
     #求10分之N
     rate=100
     curr=round(currIndex/max*rate)
     print("\r"+"#"*curr+"_"*(rate-curr),end="")
 
-class progress:
+class Progress:
+    currIndex=0
     ##无总量的,每100数刷一下
-    def progress_no_sum(self,currIndex:int,rate:int=10000):
-        if (currIndex % rate)==0:
-            f='/' if ((currIndex)/rate %2)==0 else '\\'    
-            print("\r\033[1;32m curr:{0}  {1}  \033[m ".format(currIndex,f),end="")
+    def progress_no_sum(self,rate:int=10000):
+        self.currIndex+=1
+        if (self.currIndex % rate)==0:
+            f='/' if ((self.currIndex)/rate %2)==0 else '\\'    
+            print("\r\033[1;32m curr:{0}  {1}  \033[m ".format(self.currIndex,f),end="")
 
     def end(self):
+        #bug 这里只能del局部变量self,不是del自己
         del self        
     ##进度完成
     def __del__(self):
     #前景：黑色30紅色31綠色32黃色33藍色34紫紅色35青藍色36白色37
     #背景：在前景值 基础上+10
-        print("\033[1;37m \n=done=")
+        print(f"\033[1;37m \n =done={self.currIndex}")
 
 def test():
     print("\033[20A\033[?25l",end="")

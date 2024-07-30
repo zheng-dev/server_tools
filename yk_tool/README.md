@@ -41,3 +41,11 @@ py -c "import sys; print(sys.path)"
 #临时设置 
 py -c "import sys;sys.path.append('F:\server_tools\yk_tool');print(sys.path)"
 ```
+
+搭建本地pip
+-----------
+`pip install pypiserver`
+`mkdir ~/packages`
+```bat
+pypi-server -p 8080 packages/
+```

@@ -77,25 +77,41 @@ class Find:
     #逐页显示
     def display(self):
         if self.currPage<=self.allPage:
-            self.page=self.retList[(self.currPage-1)*self.rowNum4Page:self.currPage*self.rowNum4Page]
-            i=1
-            for (sort,findStr,file,lineNum) in self.page:
-                print(f"{i}:{findStr}-->{file}:{lineNum}")
-                i+=1
+            pass
+        elif self.currPage>self.allPage: 
+            self.currPage=self.allPage
+        else:
+            self.currPage=1
+
+        self.page=self.retList[(self.currPage-1)*self.rowNum4Page:self.currPage*self.rowNum4Page]
+        i=1
+        for (sort,findStr,file,lineNum) in self.page:
+            print(f"{i}:{findStr}-->{file}:{lineNum}")
+            i+=1
         print(f"页码{self.currPage}/{self.allPage} 每页{self.rowNum4Page}条")
         #用户操作
         self.cmd()
 
     def cmd(self):
-        cmd=input("下一页(n);前一页(b);反排序(s);显示指定原内容(d 条目id);退出(q):")
+        cmd=input("下一页(n);前一页(b);反排序(r);显示指定原内容(d 条目id);退出(q):")
         cmd2=cmd.strip()
-        if cmd2=='b' and self.currPage>1:
-            self.currPage-=1
+        if cmd2[:1]=='b' and self.currPage>1:
+            try:
+                line=int(cmd2[2:])
+            except:
+                line=1
+                pass    
+            self.currPage-=line
             self.display()
-        elif cmd2=='n' and self.currPage<self.allPage:
-            self.currPage+=1
+        elif ( cmd2=='' or cmd2[:1]=='n') and self.currPage<self.allPage:
+            try:
+                line=int(cmd2[2:])
+            except:
+                line=1
+                pass    
+            self.currPage+=line
             self.display()
-        elif cmd2=='s':
+        elif cmd2=='r':
             self.retList.reverse()
             self.display()
         elif cmd2=='q':
@@ -208,7 +224,6 @@ class Progress:
     max=0
     __rate=0
     __sTime=0
-    __eTime=0
 
     def __init__(self,max1:int=None,rate=10000) -> None:
         import time
@@ -227,7 +242,7 @@ class Progress:
         if (self.currIndex % rate)==0:
             f='/' if ((self.currIndex)/rate %2)==0 else '\\'    
             print("\r\033[1;32m curr:{0}  {1}  \033[m ".format(self.currIndex,f),end="")
-    ##进度完成
+    ##进度完成 可手动del
     def __del__(self):
         import time
         __eTime=time.time()

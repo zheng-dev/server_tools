@@ -48,12 +48,13 @@ class Find:
                     lineNum+=1
                     if line=="":
                         break
-                    i=line.find(startStr)
-                    if i>-1:
-                        i2=line.find(endStr,i)
-                        if i2>-1:
-                            txt=line[i:i2+1]    
-                            self.retList.append((len(txt),txt,f,lineNum))
+                    if line.find('fight_mode => 4')>-1:
+                        i=line.find(startStr)
+                        if i>-1:
+                            i2=line.find(endStr,i)
+                            if i2>-1:
+                                txt=line[i:i2+1]    
+                                self.retList.append((len(txt),txt,f,lineNum))
                     pro.progress_no_sum()        
         del pro
         #显示

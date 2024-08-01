@@ -2,7 +2,7 @@
 # coding=utf-8
 #py3.11
 # 运行方式：python flog.py 
-#import os,shutil
+import os,shutil
 import sys
 
 def main():
@@ -15,6 +15,7 @@ def main():
        else:
            Find().find()
    else:
+       print(os.get_terminal_size())
        print('''
 从匹配的文件中查找内容，显示所在文件名和行数
 py -m flog log/fight.l* {use_mill }      
@@ -33,11 +34,12 @@ class Find:
     page=[]#当前页内容
     def find(self):
         import glob,time
-        print(f"file:{time.time()}")
         files=glob.glob(sys.argv[1])   
         startStr= sys.argv[2]
         endStr=sys.argv[3]
         print(sys.argv[1],startStr,endStr,files)
+        c,row=os.get_terminal_size()
+        self.rowNum4Page=row-4
         #整理出结果[(sortField,findStr，file,lineNum)]
         pro=Progress()
         for f in files:
@@ -59,7 +61,7 @@ class Find:
         del pro
         #显示
         try:
-            self.retList.sort()
+            self.retList.sort(reverse=True)
         except:
             pass
         print(f"sort:{time.time()}")

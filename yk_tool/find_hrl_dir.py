@@ -2,7 +2,8 @@
 # coding=utf-8
 #py3.11
 # 运行方式：python f.py ../
-import os,shutil,sys
+import os
+#,shutil,sys
 
 GAME='game.iml'#文件
 
@@ -28,7 +29,7 @@ class FindHrlDir:
     def __init__(self) -> None:
         #检查目录是否是idea项目
         if not os.path.isfile(GAME):
-            raise Exception("pro_dir_err")
+            raise Exception("project_dir_err")
         pass
     #查找出头目录到全局变量中
     def _find_dir(self,Prent:str,path:str)->None:
@@ -48,37 +49,37 @@ class FindHrlDir:
             os.chdir("../")
         return
     #使用全局变量的目录结果生成文件
-    def _after_find(self):
-        with open("hrl.txt",mode='w+') as f:
-            for i in self._GFindRet:
-                f.write("<sourceFolder url=\"file://$MODULE_DIR$/plugin{0}\" type=\"erlang-include\" />\n".format(i[1:]))
-                pass
-            pass
-        return
-
-def __test_xml():
-    import xml.etree.ElementTree as et
-    tree=et.parse(GAME)
-    p_root=tree.getroot()
-    # for m in p_root.findall('movie'):
-    #     t=m.find('type').text
-    #     year=m.find('format').text
-    #     print("row:{0},{1}".format(t,year))    
-    
-    m=p_root.find('component')
-    print(m)
-    test=et.SubElement(m,"test",{'cc':'2024','e':'07'},z='hello',z2='2')
-    test.text='33'
-    test.attrib['bb']='c'
-    tree.write('aa.iml',"UTF-8",True,None,'xml')
+    def _after_find(self)->None:
+        import xml.etree.ElementTree as et
+        try:
+            tree=et.parse(GAME)
+            p_root=tree.getroot()
+            cpt=p_root.find('component')
+            ctt=cpt.find('content')
+            sFList=ctt.findall('sourceFolder')
+            #整理出已经有的dir
+            oldDir=[]
+            for i in sFList:
+                try:
+                    if 'erlang-include'==i.attrib['type']:
+                        oldDir.append(i.attrib['url'])
+                except:
+                    pass        
+            #追加搜到的dir
+            for newI in self._GFindRet:
+                pathStr=f"file://$MODULE_DIR$/plugin{newI[2:]}"    
+                if pathStr not in oldDir:
+                    et.SubElement(ctt,'sourceFolder',{'url':pathStr,'type':'erlang-include'})
+            et.indent(tree,'\t') #xml换行
+            tree.write(GAME,"UTF-8",True,None,'xml')
+            
+        except Exception as a:
+            print("xml_err:{0}".format(a.args()))    
 
 class AppCfg:
     last_dir=""
-    data={}
 
     def go():
-        import pathlib
-        print(pathlib.Path.home())
         a=AppCfg()
         return a
     def serialize(self):  
@@ -90,18 +91,19 @@ class AppCfg:
     
     def __init__(self) -> None:
         import json
-        with open(self.__get_cfg(),'r+',-1,'utf-8-sig') as f:
-            try:
-                r=json.load(f)
-                self.last_dir=r['last_dir']
-            except:
-                self.last_dir=os.path.dirname(__file__)    
+        try:
+            with open(self.__get_cfg(),'r+',-1,'utf-8-sig') as f:
+                    r=json.load(f)
+                    self.last_dir=r['last_dir']
+        except:
+            self.last_dir=os.path.dirname(__file__)    
         pass
     def save(self):
         import json
-        with open(self.__get_cfg(),'w+',-1,'utf-8-sig') as f:
-            data=self.serialize()#{'last_dir':self.last_dir}
-            json.dump(data,f)
+        data=self.serialize()
+        if {}!=data:
+            with open(self.__get_cfg(),'w+',-1,'utf-8-sig') as f:
+                json.dump(data,f)
     def __del__(self):
         self.save()
         pass
@@ -111,8 +113,6 @@ def win():
     win = tkinter.Tk()
     win.title("iml-hrl目录增加")    # #窗口标题
     win.geometry("300x90+900+110")   # #窗口位置500后面是字母x
-
-    
 
     l1=tkinter.Label(win,text='项目路径')
     l1.pack()
@@ -127,7 +127,6 @@ def win():
         print(f"=={pathStr}")
         global cfg
         try:
-            #__test_xml()
             dir.cfg.last_dir=pathStr
             FindHrlDir.go(pathStr)
             dir.cfg.save()
@@ -135,7 +134,7 @@ def win():
         except OSError as a:
             tkinter.messagebox.showinfo("err","文件错误信息:\n{0}\n{1}".format(a.strerror,a.filename))
         except Exception as a:
-            tkinter.messagebox.showinfo("err","错误信息:\n{0}".format(a.args))
+            tkinter.messagebox.showinfo("err","错误信息:\n{0}-{1}".format(a.args,type(a)))
                     
     go=tkinter.Button(win,text="  go  ",command=goBack)
     go.pack()
@@ -151,7 +150,4 @@ def win():
     win.mainloop()   # #窗口持久化
 
 if __name__=='__main__':
-    #main()
     win()
-    
-    pass

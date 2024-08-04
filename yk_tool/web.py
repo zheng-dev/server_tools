@@ -1,6 +1,7 @@
 
-
 if __name__=='__main__':
-    import os
+    
     print("ok==")
-    os.system('py -m http.server 80 -d ./')
+    import os
+    os.system('py -m http.server 80 -d ./yk_tool --cgi')
+    print('====done=')

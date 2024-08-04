@@ -1,7 +1,7 @@
 #
 # coding=utf-8
 #py3.11
-# 运行方式：python f.py ../
+
 import threading,time,multiprocessing
 
 def main():
@@ -35,8 +35,9 @@ class mThread(threading.Thread):
             num-=1   
 
 
-           
+def test_curl():
+    return       
 
 
 if __name__=='__main__':
-    main()
+    test_curl()

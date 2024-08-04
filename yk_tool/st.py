@@ -2,9 +2,7 @@
 # coding=utf-8
 #py3.11
 # 运行方式：python st.py
-import os,shutil
-
-import sys
+import os,shutil,sys
 
 
 

@@ -16,14 +16,12 @@
 # if __name__=='__main__':
 
 
-import cgi, codecs,sys
+import codecs,sys
 sys.stdout=codecs.getwriter('utf8')(sys.stdout.buffer)
-import cgitb
+import cgi,cgitb
 cgitb.enable(display=0, logdir="~/logdir")
-# 创建 FieldStorage 的实例化
-form = cgi.FieldStorage() 
 
-# 获取数据
+form = cgi.FieldStorage() 
 site_name = form.getvalue('name')
 site_url  = form.getvalue('url')
 

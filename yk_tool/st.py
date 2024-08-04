@@ -4,10 +4,7 @@
 # 运行方式：python st.py
 import os,shutil,sys
 
-
-
 def main():
-    #os.system("clear")
     current_path = os.path.dirname(__file__)
     os.chdir(current_path)
     a=False
@@ -36,8 +33,6 @@ def main():
     add=all-old
     print("新加{0},老的{1},总的{2}".format(add,old,len(cB)))
     return 0
-
-
 
 if __name__=='__main__':
     main()

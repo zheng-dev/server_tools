@@ -42,61 +42,46 @@ def cfg_json()->dict:
                 return json.load(f)
     except:
         return {}    
+##浏览
+def browser(url:str,data:dict,charset='utf8',method='GET')->str:
+    import urllib.parse,urllib.request,http.cookiejar
+    header = {
+    'User-Agent':'Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+    }
+    cooks=http.cookiejar.MozillaCookieJar(filename='.curlc')
+    try:
+        cooks.load(filename='.curlc',ignore_discard=True,ignore_expires=True)
+    except Exception as e:
+        pass
+    
+    cook_hand=urllib.request.HTTPCookieProcessor(cooks)
+    opener=urllib.request.build_opener(cook_hand)
+
+    data = urllib.parse.urlencode(data).encode(charset)
+    req=urllib.request.Request(url, data, header,method=method)
+    #更新cookies  
+    cooks.save(ignore_discard=True,ignore_expires=True)
+    return opener.open(req).read().decode(charset) 
+
 
 def test_curl():
-    import urllib.parse,urllib.request,http.cookiejar
-    header = {
-    'User-Agent':'Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
-    }
-
-    cook_jar=http.cookiejar.MozillaCookieJar(filename='.curlc')
-    cook_hand=urllib.request.HTTPCookieProcessor(cook_jar)
-    opener=urllib.request.build_opener(cook_hand)
-
     cfg=cfg_json()
+    data = {'os_username':uName,'os_password':cfg['pwd']}
     uName=cfg['user']
-    data = urllib.parse.urlencode({'os_username':uName,'os_password':cfg['pwd']}).encode('utf8') 
-    login_request=urllib.request.Request(cfg['login'], data, header,method='POST')   
-    r=opener.open(login_request).read().decode('utf-8')
-
-
+    r=browser(cfg['login'],data,'utf8',method='POST')
     if f'<meta name="ajs-remote-user" content="{uName}">' in r:
-        cook_jar.save(ignore_discard=True,ignore_expires=True)
-        print(cook_jar)
-        url2=cfg['list']
-        data2 = urllib.parse.urlencode({'selectPageId':'11706'}).encode('utf8') 
-        c_r=urllib.request.Request(url2,data2,header)
-        reponse=opener.open(c_r).read()
-        print(cook_jar)
-
+        reponse=browser(cfg['list'],{'selectPageId':'11706'},'utf8')
         with open('t.htm','w+',encoding='utf-8') as f:
-            f.write(reponse.decode('utf-8'))
+            f.write(reponse)
             import webbrowser
             webbrowser.open('t.htm')
-        return       
+    return       
 
 def loop():
-    import urllib.parse,urllib.request,http.cookiejar
-    header = {
-    'User-Agent':'Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
-    }
-
-    try:
-        cook_jar=http.cookiejar.MozillaCookieJar()
-        cook_jar.load(filename='.curlc',ignore_discard=True,ignore_expires=True)
-    except Exception as e:
-        print('err',e.args)
-        cook_jar=http.cookiejar.MozillaCookieJar(filename='.curlc')
-    cook_hand=urllib.request.HTTPCookieProcessor(cook_jar)
-    opener=urllib.request.build_opener(cook_hand)
-
     cfg=cfg_json()
-    data2 = urllib.parse.urlencode({'selectPageId':'11706'}).encode('utf8') 
-    c_r=urllib.request.Request(cfg['list'],data2,header)
-    reponse=opener.open(c_r).read()
-
+    reponse=browser(cfg['list'],{'selectPageId':'11706'},'utf8')
     with open('t.htm','w+',encoding='utf-8') as f:
-        f.write(reponse.decode('utf-8'))
+        f.write(reponse)
         import webbrowser
         webbrowser.open('t.htm')
 

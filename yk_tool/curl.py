@@ -50,24 +50,27 @@ def browser(url:str,data:dict,charset='utf8',method='GET')->str:
     }
     cooks=http.cookiejar.MozillaCookieJar(filename='.curlc')
     try:
-        cooks.load(filename='.curlc',ignore_discard=True,ignore_expires=True)
+        cooks.load(ignore_discard=True,ignore_expires=True)
     except Exception as e:
-        pass
-    
+        print(e.args)
+        
     cook_hand=urllib.request.HTTPCookieProcessor(cooks)
     opener=urllib.request.build_opener(cook_hand)
 
     data = urllib.parse.urlencode(data).encode(charset)
     req=urllib.request.Request(url, data, header,method=method)
+    res=opener.open(req).read().decode(charset)
     #更新cookies  
-    cooks.save(ignore_discard=True,ignore_expires=True)
-    return opener.open(req).read().decode(charset) 
+    cooks.save(ignore_discard=True,ignore_expires=False)
+    print(cooks)
+    return res
 
 
 def test_curl():
     cfg=cfg_json()
-    data = {'os_username':uName,'os_password':cfg['pwd']}
     uName=cfg['user']
+    data = {'os_username':uName,'os_password':cfg['pwd']}
+    
     r=browser(cfg['login'],data,'utf8',method='POST')
     if f'<meta name="ajs-remote-user" content="{uName}">' in r:
         reponse=browser(cfg['list'],{'selectPageId':'11706'},'utf8')
@@ -79,12 +82,12 @@ def test_curl():
 
 def loop():
     cfg=cfg_json()
-    reponse=browser(cfg['list'],{'selectPageId':'11706'},'utf8')
+    reponse=browser(cfg['list'],{'filter=':'-1'},'utf8')
     with open('t.htm','w+',encoding='utf-8') as f:
         f.write(reponse)
         import webbrowser
         webbrowser.open('t.htm')
 
 if __name__=='__main__':
-   # test_curl()
+   #test_curl()
    loop()

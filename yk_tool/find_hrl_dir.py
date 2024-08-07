@@ -118,18 +118,18 @@ def win():
     l1.pack()
     dir=tkinter.Entry(win,width=40)
     
-    dir.cfg=AppCfg.go()
+    cfg=AppCfg.go()
     dir.insert(0,dir.cfg.last_dir)
     dir.pack()
     dir.focus_set()
     def goBack():
         pathStr=dir.get()
         print(f"=={pathStr}")
-        global cfg
         try:
-            dir.cfg.last_dir=pathStr
+            nonlocal cfg
+            cfg.last_dir=pathStr
             FindHrlDir.go(pathStr)
-            dir.cfg.save()
+            cfg.save()
             tkinter.messagebox.showinfo("成功","生成完毕")
         except OSError as a:
             tkinter.messagebox.showinfo("err","文件错误信息:\n{0}\n{1}".format(a.strerror,a.filename))

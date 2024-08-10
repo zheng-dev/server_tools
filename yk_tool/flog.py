@@ -9,9 +9,9 @@ def main():
    sig_hand()
    if len(sys.argv)>1:
        if sys.argv[1]=="-line":
-           d_line()
+           d_line_cmd()
        elif sys.argv[1]=="-fx":
-           analyse()    
+           FightBuff.analyse()    
        else:
            Find().find()
    else:
@@ -136,7 +136,7 @@ class Find:
             self.cmd()    
 
 #显示行
-def d_line():
+def d_line_cmd():
     file=sys.argv[2]
     lineNumArg=int(sys.argv[3])
     d_line_(file,lineNumArg)
@@ -155,73 +155,154 @@ def d_line_(file:str,lineNumArg:int):
                 return 
     return
 
-def analyse():
-    (lineNum,condLineNum,kvList)=clear_data()
-    print("总条数{0};100ms的条数{1}".format(lineNum,condLineNum))
-    save_ret(kvList)
-    return
-##结果存入csv
-def save_ret(kvList:dict):
-    import csv
-    if {}!=dict:
-        with open('event.csv','w+',-1,'utf-8-sig') as ePtr:
-            writer=csv.writer(ePtr,quoting=csv.QUOTE_ALL,lineterminator="\n")
-            writer.writerow(['事件mf','总次数','100m的次数','平均用时','最大用时','最大用时日志'])
-            #writer.writerow(['事件mf | 总次数 | 100m的次数 | 平均用时 | 最大用时 | 原日志'])
-            for key in kvList:
-                oldTimes,old100Times,oldAccMs,oldMaxMs,oldLine=kvList.get(key)
-                writer.writerow([key,oldTimes,old100Times,round(oldAccMs/oldTimes),oldMaxMs,oldLine.strip()])  
-                #print("{0} | {1} | {5} | {2} | {3} | {4}".format(key,oldTimes,round(oldAccMs/oldTimes),oldMaxMs,oldLine.strip(),old100Times))    
-    return        
+##分析event用时日志
+class Event:
+    def analyse():
+        (lineNum,condLineNum,kvList)=Event.clear_data()
+        print("总条数{0};100ms的条数{1}".format(lineNum,condLineNum))
+        Event.save_ret(kvList)
+        return
+    ##结果存入csv
+    def save_ret(kvList:dict):
+        import csv
+        if {}!=dict:
+            with open('event.csv','w+',-1,'utf-8-sig') as ePtr:
+                writer=csv.writer(ePtr,quoting=csv.QUOTE_ALL,lineterminator="\n")
+                writer.writerow(['事件mf','总次数','100m的次数','平均用时','最大用时','最大用时日志'])
+                #writer.writerow(['事件mf | 总次数 | 100m的次数 | 平均用时 | 最大用时 | 原日志'])
+                for key in kvList:
+                    oldTimes,old100Times,oldAccMs,oldMaxMs,oldLine=kvList.get(key)
+                    writer.writerow([key,oldTimes,old100Times,round(oldAccMs/oldTimes),oldMaxMs,oldLine.strip()])  
+                    #print("{0} | {1} | {5} | {2} | {3} | {4}".format(key,oldTimes,round(oldAccMs/oldTimes),oldMaxMs,oldLine.strip(),old100Times))    
+        return        
 
-##整理出数据
-##ret:(lineNum,condLineNum,kvList)
-def clear_data()->tuple[int, int, dict]:
-    with open('event.txt','r',-1,'utf8') as fPtr:
-        lineNum=0 #总条数
-        condLineNum=0 #满足过虑条件行数
-        kvList={} #结果
-        pro=Progress()
-        while fPtr:
-            pro.progress_no_sum()
-            line=fPtr.readline()
-            if line=="":
-                break
-            lineNum+=1
-            uSIndex=line.find('{use_ms,')
-            if uSIndex>=0:
-                uEIndex=line.find('}',uSIndex)
-                useMs=int(line[uSIndex+8:uEIndex])
-                if useMs<100:
-                    continue #小于100ms的不统计
+    ##整理出数据
+    ##ret:(lineNum,condLineNum,kvList)
+    def clear_data()->tuple[int, int, dict]:
+        with open('event.txt','r',-1,'utf8') as fPtr:
+            lineNum=0 #总条数
+            condLineNum=0 #满足过虑条件行数
+            kvList={} #结果
+            pro=Progress()
+            while fPtr:
+                pro.progress_no_sum()
+                line=fPtr.readline()
+                if line=="":
+                    break
+                lineNum+=1
+                uSIndex=line.find('{use_ms,')
+                if uSIndex>=0:
+                    uEIndex=line.find('}',uSIndex)
+                    useMs=int(line[uSIndex+8:uEIndex])
+                    if useMs<100:
+                        continue #小于100ms的不统计
 
-                #上面找到了使用时间
-                #下面找事件mf
-                mfSIndex=line.find('{',uEIndex)
-                mfEIndex1=line.find(',',mfSIndex)
-                mfEIndex2=line.find(',',mfEIndex1+1)
-                mfStr=line[mfSIndex:mfEIndex2]+'}'
+                    #上面找到了使用时间
+                    #下面找事件mf
+                    mfSIndex=line.find('{',uEIndex)
+                    mfEIndex1=line.find(',',mfSIndex)
+                    mfEIndex2=line.find(',',mfEIndex1+1)
+                    mfStr=line[mfSIndex:mfEIndex2]+'}'
 
-                oldRow=kvList.get(mfStr,0)
-                #统一上100ms的
-                reach100=0 if useMs>100 else 1
+                    oldRow=kvList.get(mfStr,0)
+                    #统一上100ms的
+                    reach100=0 if useMs>100 else 1
 
-                if oldRow==0:
-                    #(总次数,总用时ms,上100ms的总次数,单次最大用时ms,最大ms时的line)
-                    kvList[mfStr]=(1,reach100,useMs,useMs,line)
-                else:
-                    oldTimes,old100Times,oldAccMs,oldMaxMs,oldLine=oldRow
-                    if oldMaxMs<useMs:
-                        oldMaxMs=useMs
-                        oldLine=line
-                    kvList[mfStr]=(1+oldTimes,old100Times+reach100,useMs+oldAccMs,oldMaxMs,oldLine)    
+                    if oldRow==0:
+                        #(总次数,总用时ms,上100ms的总次数,单次最大用时ms,最大ms时的line)
+                        kvList[mfStr]=(1,reach100,useMs,useMs,line)
+                    else:
+                        oldTimes,old100Times,oldAccMs,oldMaxMs,oldLine=oldRow
+                        if oldMaxMs<useMs:
+                            oldMaxMs=useMs
+                            oldLine=line
+                        kvList[mfStr]=(1+oldTimes,old100Times+reach100,useMs+oldAccMs,oldMaxMs,oldLine)    
 
-                #print("tttt{0}==={1}----{2}".format(useMs,mfStr,kvList))
-                # if lineNum==2:
-                #     break
-            condLineNum+=1
-    return (lineNum,condLineNum,kvList)         
+                    #print("tttt{0}==={1}----{2}".format(useMs,mfStr,kvList))
+                    # if lineNum==2:
+                    #     break
+                condLineNum+=1
+        return (lineNum,condLineNum,kvList)         
+    
+##分析战斗buff
+class FightBuff:
+    t_buff_uid=[]
+    t_buff=[]
+    max_line=0#最大行数
+    def analyse():
+        a=FightBuff()
 
+        a.d_t_buff_uid()
+        a.d_t_buff()
+
+        a.save_ret()
+        print('===done====')
+        return
+    ##结果存入csv
+    def save_ret(self):
+        import csv
+        if []!=list:
+            with open('event.csv','w+',-1,'utf-8-sig') as ePtr:
+                writer=csv.writer(ePtr,quoting=csv.QUOTE_ALL,lineterminator="\n")
+
+                i=0
+                maxLine=self.max_line
+                while i<=maxLine:
+                    row=[""]*20
+                    try:
+                        row[0]=self.t_buff_uid[i][0]
+                        row[1]=self.t_buff_uid[i][1]
+                        row[2]=self.t_buff_uid[i][2]
+                        row[3]=self.t_buff_uid[i][3].strip()
+                    except:
+                            pass    
+                    #空3列
+                    try:
+                        row[6]=self.t_buff[i][0]
+                        row[7]=self.t_buff[i][1]
+                        row[8]=self.t_buff[i][2].strip()
+                    except:
+                        pass    
+                    
+                    writer.writerow(row)  
+                    i+=1
+        return        
+
+    ##整理出数据
+    ##ret:[[时间,次数,buff]]
+    def d_t_buff_uid(self)->None:
+        os.chdir('fight_log_触发buffuid')
+        f=os.listdir('./')
+        print(f'==={f}')
+        with open(f[0],'r',-1,'utf8') as fPtr:
+            ret=[]
+            while fPtr:
+                line=fPtr.readline()
+                if line=="":
+                    break
+                row=line[1:].split(',')
+                ret.append(row)
+        self.t_buff_uid=ret
+        self.max_line=max(len(ret),self.max_line)  
+        os.chdir('../')
+    ##ret:[[时间,次数,buffsid]]   
+    def d_t_buff(self)->None:
+        os.chdir('fight_log_触发被动和buff')
+        f=os.listdir('./')
+        print(f'==={f}')
+        with open(f[0],'r',-1,'utf8') as fPtr:
+            ret=[]
+            while fPtr:
+                line=fPtr.readline()
+                if line=="":
+                    break
+                row=line[1:].split(',')
+                ret.append(row)
+        self.t_buff=ret
+        self.max_line=max(len(ret),self.max_line)  
+        os.chdir('../')     
+
+##进度
 class Progress:
     currIndex=0
     max=0
@@ -253,34 +334,7 @@ class Progress:
     #背景：在前景值 基础上+10
         print(f"\033[1;37m \n =done={self.currIndex} use {int(__eTime)-int(self.__sTime)} second")
 
-def test():
-    print("\033[20A\033[?25l",end="")
-    for i in range(60):
-        s=get_single_char()
-        print("\033[2J",end="")
-        print("\033[31m 红色{0}{1}字 \033[m".format(i,s))
 
-##不用回车的单次输入
-def get_single_char():
-    if sys.platform=='win32':
-        return w__get_single_char()
-    else:
-        return l_get_single_char()  
-def w__get_single_char():
-    import msvcrt
-    return msvcrt.getch().decode()
-def l_get_single_char():  
-    import sys,tty,termios  
-    fd = sys.stdin.fileno()  
-    old_settings = termios.tcgetattr(fd)  
-    # 设置新终端设置：无回显，非阻塞  
-    try:  
-        tty.setraw(sys.stdin.fileno())  
-        ch = sys.stdin.read(1)  
-    finally:  
-        # 恢复旧的终端设置  
-        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)  
-    return ch  
 
 ##捕获信号
 def sig_hand():

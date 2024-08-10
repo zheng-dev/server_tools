@@ -119,7 +119,7 @@ def win():
     dir=tkinter.Entry(win,width=40)
     
     cfg=AppCfg.go()
-    dir.insert(0,dir.cfg.last_dir)
+    dir.insert(0,cfg.last_dir)
     dir.pack()
     dir.focus_set()
     def goBack():

@@ -8,8 +8,8 @@ def main():
     current_path = os.path.dirname(__file__)
     os.chdir(current_path)
     a=False
-    cA=[]
-    cB=[]
+    cA={}
+    cB={}
     with open("a.txt",'r') as f:
         while f:
              line=f.readline()
@@ -18,20 +18,23 @@ def main():
              elif line[:3]=="===":#A;B分组线c
                  a=True
              else:
+                 r=line.split(',')
                  if a:
-                     cA.append(line.split()[4])
+                     cA[r[2][:-2]]=r[1]
                  else:
-                     cB.append(line.split()[4])    
+                     cB[r[2][:-2]]=r[1]  
                  pass
     old=0
     for i in cA:
-        if i in cB:
-            old+=1
-            print("{}".format(i))
+        try:
+            if cB[i]!=cA[i]:
+                print(f"{i}->old={cA[i]},n={cB[i]}")
+        except:
+            print(f"{i}only old{cA[i]}")    
 
-    all=len(cB)
-    add=all-old
-    print("新加{0},老的{1},总的{2}".format(add,old,len(cB)))
+    # all=len(cB)
+    # add=all-old
+    # print("新加{0},老的{1},总的{2}".format(add,old,len(cB)))
     return 0
 
 def test():

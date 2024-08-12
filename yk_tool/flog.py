@@ -228,12 +228,14 @@ class Event:
 class FightBuff:
     t_buff_uid=[]
     t_buff=[]
+    t_add_buff=[]
     max_line=0#最大行数
     def analyse():
         a=FightBuff()
 
-        a.d_t_buff_uid()
-        a.d_t_buff()
+        a.do('fight_log_触发buffuid',["耗时","总执行次数","buffUid","buffSid"],'t_buff_uid')
+        a.do('fight_log_触发被动和buff',["耗时","总执行次数","buff或者被动sid"],'t_buff')
+        a.do('fight_log_挂载buff',["耗时","buff_add次数","buff_sid"],'t_add_buff')
 
         a.save_ret()
         print('===done====')
@@ -262,7 +264,15 @@ class FightBuff:
                         row[7]=self.t_buff[i][1]
                         row[8]=self.t_buff[i][2].strip()
                     except:
-                        pass    
+                        pass   
+
+                    #空3列
+                    try:
+                        row[11]=self.t_add_buff[i][0]
+                        row[12]=self.t_add_buff[i][1]
+                        row[13]=self.t_add_buff[i][2].strip()
+                    except:
+                        pass   
                     
                     writer.writerow(row)  
                     i+=1
@@ -275,32 +285,41 @@ class FightBuff:
         f=os.listdir('./')
         print(f'==={f}')
         with open(f[0],'r',-1,'utf8') as fPtr:
-            ret=[]
+            lNum=0
+            ret=[["耗时","总执行次数","buffUid","buffSid"]]
             while fPtr:
                 line=fPtr.readline()
                 if line=="":
                     break
+                lNum+=1
+                if lNum==1:
+                    continue
                 row=line[1:].split(',')
-                ret.append(row)
+                ret.append([row[0],row[1],row[2][1:],row[3][:-2]])
         self.t_buff_uid=ret
         self.max_line=max(len(ret),self.max_line)  
         os.chdir('../')
-    ##ret:[[时间,次数,buffsid]]   
-    def d_t_buff(self)->None:
-        os.chdir('fight_log_触发被动和buff')
+   
+    ##
+    def do(self,dir:str,head:list[str],key)->None:
+        os.chdir(dir)
         f=os.listdir('./')
         print(f'==={f}')
         with open(f[0],'r',-1,'utf8') as fPtr:
-            ret=[]
+            lNum=0
+            ret=[head]
             while fPtr:
                 line=fPtr.readline()
                 if line=="":
                     break
+                lNum+=1
+                if lNum==1:
+                    continue
                 row=line[1:].split(',')
                 ret.append(row)
-        self.t_buff=ret
+        setattr(self,key,ret)        
         self.max_line=max(len(ret),self.max_line)  
-        os.chdir('../')     
+        os.chdir('../')         
 
 ##进度
 class Progress:

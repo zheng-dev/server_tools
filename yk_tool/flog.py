@@ -232,8 +232,12 @@ class FightBuff:
     max_line=0#最大行数
     def analyse():
         a=FightBuff()
-
-        a.do('fight_log_触发buffuid',["耗时","总执行次数","buffUid","buffSid"],'t_buff_uid')
+        def l(line:str)->list[str,str,str,str]:
+            ret=line[1:].split(',')
+            ret[2]=  ret[2][1:]
+            ret[3]=  ret[3][:-2]
+            return ret
+        a.do('fight_log_触发buffuid',["耗时","总执行次数","buffUid","buffSid"],'t_buff_uid',l)
         a.do('fight_log_触发被动和buff',["耗时","总执行次数","buff或者被动sid"],'t_buff')
         a.do('fight_log_挂载buff',["耗时","buff_add次数","buff_sid"],'t_add_buff')
 
@@ -301,7 +305,7 @@ class FightBuff:
         os.chdir('../')
    
     ##
-    def do(self,dir:str,head:list[str],key)->None:
+    def do(self,dir:str,head:list[str],key:str,rowFun=None)->None:
         os.chdir(dir)
         f=os.listdir('./')
         print(f'==={f}')
@@ -315,7 +319,10 @@ class FightBuff:
                 lNum+=1
                 if lNum==1:
                     continue
-                row=line[1:].split(',')
+                if rowFun is None:
+                    row=line[1:].split(',')
+                else:
+                    row=rowFun(line)    
                 ret.append(row)
         setattr(self,key,ret)        
         self.max_line=max(len(ret),self.max_line)  

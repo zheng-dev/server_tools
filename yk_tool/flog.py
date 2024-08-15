@@ -5,13 +5,16 @@
 import os,shutil
 import sys
 
+ARGSV=[]
 def main():
    sig_hand()
    if len(sys.argv)>1:
        if sys.argv[1]=="-line":
            d_line_cmd()
        elif sys.argv[1]=="-fx":
-           FightBuff.analyse()    
+           global ARGSV
+           ARGSV=sys.argv
+           AnalyseFALog.analyse()    
        else:
            Find().find()
    else:
@@ -223,15 +226,101 @@ class Event:
                     #     break
                 condLineNum+=1
         return (lineNum,condLineNum,kvList)         
-    
+##分析战报日志
+class AnalyseFALog:
+    __tab_skill_eff_do=[]#技能生效触发的效果sid
+    __fileName=''
+    def analyse():
+        global ARGSV
+
+        a=AnalyseFALog(ARGSV[2])
+        
+        a.do()
+        a.save_ret()
+
+        print('===done==')
+        return
+    def __init__(self,fName:str) -> None:
+        self.__fileName=fName
+    def do(self):
+        fName=self.__fileName
+        skillS='====主动技开始:主动技uid:'
+        skillSid='主动技sid:'
+        SidLen=len(skillSid)
+        skillE='"=======end_skill",no_key:'
+        time=',no_key:'
+        timeLen=len(time)
+        effS='效果器:效果器sid:{'
+        effSLen=len(effS)
+        effE=','
+
+        with open(fName,'r',-1,'utf8') as fPtr:
+            currSkill=''
+            ret={}           
+            while fPtr:
+                line=fPtr.readline()
+                if line=="":
+                    break
+                if skillS in line:#开始技能
+                    i1=line.find(skillSid)
+                    i2=line.find(',',i1)
+                    currSkill=line[i1+SidLen:i2]#技能sid
+                    list1:list=ret.get(currSkill,[])
+                    list1.append((line,[],-1))
+                    ret[currSkill]=list1
+                elif effS in line and currSkill!='':
+                    i1=line.find(effS)
+                    i2=line.find(effE,i1)
+
+                    list1:list=ret.get(currSkill,[])
+                    nowIndex=len(list1)-1
+                    (oLine,oEffL,u)=list1[nowIndex]    
+                    oEffL.append(line[i1+effSLen:i2])
+                    list1[nowIndex]=(oLine,oEffL,u)
+
+                elif skillE in line:
+                    list1:list=ret.get(currSkill,[])
+                    nowIndex=len(list1)-1
+                    (oLine,oEffList,u)=list1[nowIndex]
+                    i1=line.find(time)
+                    i2=line.find(time,i1+timeLen)
+                    i4=line.find(',',i2+timeLen)
+                    useTime=line[i2+timeLen:i4]#耗时
+                    list1[nowIndex]=(oLine,oEffList,useTime)
+                    currSkill=''#重置
+            self.__tab_skill_eff_do=ret
+    ##结果存入csv
+    def save_ret(self):
+        import csv
+        if []!=list:
+            
+            with open(f'{self.__fileName}.csv','w+',-1,'utf-8-sig') as ePtr:
+                writer=csv.writer(ePtr,quoting=csv.QUOTE_ALL,lineterminator="\n")
+
+                ret=self.__tab_skill_eff_do
+                writer.writerow(["技能sid","技能用时","效果个数","技能信息","期间效果sid"]) 
+                for k in ret:
+                    
+                    row=[""]*20
+                    for (oLine,oEffList,useTime) in ret[k]:
+                        row[0]=k
+                        row[1]=useTime
+                        row[2]=len(oEffList)
+                        row[3]=oLine[:-40]
+                        row[4]=f"'{','.join(oEffList)}"
+                        writer.writerow(row) 
+
+                   
+                    
+            
 ##分析战斗buff
-class FightBuff:
+class AnalyseFightBuff:
     t_buff_uid=[]
     t_buff=[]
     t_add_buff=[]
     max_line=0#最大行数
     def analyse():
-        a=FightBuff()
+        a=AnalyseFightBuff()
         def l(line:str)->list[str,str,str,str]:
             ret=line[1:].split(',')
             ret[2]=  ret[2][1:]

@@ -228,7 +228,7 @@ class Event:
         return (lineNum,condLineNum,kvList)         
 ##分析战报日志
 class AnalyseFALog:
-    __tab_skill_eff_do=[]#技能生效触发的效果sid
+    __tab_skill_eff_do:dict[str,list[tuple[str,list,int]]]={} #技能生效触发的效果sid
     __fileName=''
     def analyse():
         global ARGSV
@@ -243,50 +243,52 @@ class AnalyseFALog:
     def __init__(self,fName:str) -> None:
         self.__fileName=fName
     def do(self):
-        fName=self.__fileName
-        print('===start_log:',fName)
-        skillS='====主动技开始:主动技uid:'
-        skillSid='主动技sid:'
-        SidLen=len(skillSid)
-        skillE='"=======end_skill",no_key:'
-        time=',no_key:'
-        timeLen=len(time)
-        effS='效果器:效果器sid:{'
-        effSLen=len(effS)
-        effE=','
+        print('===start_log:',self.__fileName)
+        #匹配主动技开始
+        flagSkillS='====主动技开始:主动技uid:'
+        flagSkillSid='主动技sid:'
+        flagSidLen=len(flagSkillSid)
+        #匹配主动技结束
+        flagSkillE='"=======end_skill",no_key:'
+        #匹配技能耗时
+        flagTime=',no_key:'
+        flagTimeLen=len(flagTime)
+        #匹配效果sid
+        flagEffS='效果器:效果器sid:{'
+        flagEffSLen=len(flagEffS)
+        flagEffE=','
 
-        with open(fName,'r',-1,'utf8') as fPtr:
+        with open(self.__fileName,'r',-1,'utf8') as fPtr:
             currSkill=''
-            ret={}           
+            ret:dict[str,list[tuple[str,list,int]]]={}           
             while fPtr:
                 line=fPtr.readline()
                 if line=="":
                     break
-                if skillS in line:#开始技能
-                    i1=line.find(skillSid)
+                if flagSkillS in line:#开始技能
+                    i1=line.find(flagSkillSid)
                     i2=line.find(',',i1)
-                    currSkill=line[i1+SidLen:i2]#技能sid
+                    currSkill=line[i1+flagSidLen:i2]#技能sid
                     list1:list=ret.get(currSkill,[])
                     list1.append((line,[],-1))
                     ret[currSkill]=list1
-                elif effS in line and currSkill!='':
-                    i1=line.find(effS)
-                    i2=line.find(effE,i1)
+                elif flagEffS in line and currSkill!='':
+                    i1=line.find(flagEffS)
+                    i2=line.find(flagEffE,i1)
 
                     list1:list[(str,list,int)]=ret.get(currSkill,[('',[],0)])
                     nowIndex=len(list1)-1
-                    (oLine,oEffL,u)=list1[nowIndex]                        
-                    oEffL.append(line[i1+effSLen:i2])
+                    (oLine,oEffL,u):tuple[str,list,int]=list1[nowIndex]    #type:ignore                    
+                    oEffL.append(line[i1+flagEffSLen:i2])
                     list1[nowIndex]=(oLine,oEffL,u)
-
-                elif skillE in line:
+                elif flagSkillE in line:
                     list1:list=ret.get(currSkill,[])
                     nowIndex=len(list1)-1
                     (oLine,oEffList,u)=list1[nowIndex]
-                    i1=line.find(time)
-                    i2=line.find(time,i1+timeLen)
-                    i4=line.find(',',i2+timeLen)
-                    useTime=line[i2+timeLen:i4]#耗时
+                    i1=line.find(flagTime)
+                    i2=line.find(flagTime,i1+flagTimeLen)
+                    i4=line.find(',',i2+flagTimeLen)
+                    useTime=line[i2+flagTimeLen:i4]#耗时
                     list1[nowIndex]=(oLine,oEffList,useTime)
                     currSkill=''#重置
             self.__tab_skill_eff_do=ret

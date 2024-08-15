@@ -273,9 +273,9 @@ class AnalyseFALog:
                     i1=line.find(effS)
                     i2=line.find(effE,i1)
 
-                    list1:list=ret.get(currSkill,[])
+                    list1:list[(str,list,int)]=ret.get(currSkill,[('',[],0)])
                     nowIndex=len(list1)-1
-                    (oLine,oEffL,u)=list1[nowIndex]    
+                    (oLine,oEffL,u)=list1[nowIndex]                        
                     oEffL.append(line[i1+effSLen:i2])
                     list1[nowIndex]=(oLine,oEffL,u)
 

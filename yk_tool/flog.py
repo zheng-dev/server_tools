@@ -244,6 +244,7 @@ class AnalyseFALog:
         self.__fileName=fName
     def do(self):
         fName=self.__fileName
+        print('===start_log:',fName)
         skillS='====主动技开始:主动技uid:'
         skillSid='主动技sid:'
         SidLen=len(skillSid)

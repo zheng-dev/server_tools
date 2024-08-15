@@ -83,7 +83,7 @@ def install_timer():
         if not os.path.exists(exePath):
             exePath=sys.executable
 
-        r=os.system("schtasks /create /sc minute /mo 1 /tn \"yk_db_bak_del\" /tr {0}\" {1}\"".format(exePath,__file__))
+        r=os.system("schtasks /create /sc minute /mo 30 /tn \"yk_db_bak_del\" /tr {0}\" {1}\"".format(exePath,__file__))
         if r==1:
             print("定时器失败,确认是否管理员权限:{0}".format(r))
         else:            

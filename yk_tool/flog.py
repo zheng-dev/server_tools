@@ -278,7 +278,8 @@ class AnalyseFALog:
 
                     list1:list[(str,list,int)]=ret.get(currSkill,[('',[],0)])
                     nowIndex=len(list1)-1
-                    (oLine,oEffL,u):tuple[str,list,int]=list1[nowIndex]    #type:ignore                    
+                    r:tuple[str,list,int]=list1[nowIndex] 
+                    (oLine,oEffL,u)=r                      
                     oEffL.append(line[i1+flagEffSLen:i2])
                     list1[nowIndex]=(oLine,oEffL,u)
                 elif flagSkillE in line:

@@ -1,24 +1,25 @@
-镜像地址
----------
+字符串切片
+----------
+```python
+>>> 'abcd'[-1] #取最后一位
+'d'
+>>> 'abcd'[:-1] #去掉最后一位
+'abc'
+>>> 'abcd'[1:] #从第1位开始取完
+'bcd'
+>>> 'abcd'[0:2] #从第0位开始取2个
+'ab'
+```
 
-[清华：](https://pypi.tuna.tsinghua.edu.cn/simple)
-[阿里云：](http://mirrors.aliyun.com/pypi/simple/)
-[中国科技大学 ](https://pypi.mirrors.ustc.edu.cn/simple/)
-[华中理工大学：](http://pypi.hustunique.com/)
-[山东理工大学：](http://pypi.sdutlinux.org/) 
-[豆瓣：](http://pypi.douban.com/simple/)
-
-使用源
------
+类型说明
+--------
+py的双下划线是私有函数或变量，但解释器是不会强检查的，ide处理；安装mypy后可以运行时检查
 
 配置
+-----
 `pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple`
 临时使用
 `py -m pip install mypy -i https://pypi.tuna.tsinghua.edu.cn/simple`
-
-
-
-py的双下划线是私有函数或变量，但解释器是不会强检查的，ide处理
 
 设置py -m的检查目录
 ```
@@ -33,6 +34,15 @@ py -c "import sys; print(sys.path)"
 #临时设置 
 py -c "import sys;sys.path.append('F:\server_tools\yk_tool');print(sys.path)"
 ```
+
+镜像地址
+---------
+[清华：](https://pypi.tuna.tsinghua.edu.cn/simple)
+[阿里云：](http://mirrors.aliyun.com/pypi/simple/)
+[中国科技大学 ](https://pypi.mirrors.ustc.edu.cn/simple/)
+[华中理工大学：](http://pypi.hustunique.com/)
+[山东理工大学：](http://pypi.sdutlinux.org/) 
+[豆瓣：](http://pypi.douban.com/simple/)
 
 搭建本地pip
 -----------

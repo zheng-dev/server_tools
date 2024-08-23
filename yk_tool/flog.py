@@ -279,8 +279,10 @@ class AnalyseFALog:
                     list1:list[(str,list,int)]=ret.get(currSkill,[('',[],0)])
                     nowIndex=len(list1)-1
                     r:tuple[str,list,int]=list1[nowIndex] 
-                    (oLine,oEffL,u)=r                      
-                    oEffL.append(line[i1+flagEffSLen:i2])
+                    (oLine,oEffL,u)=r 
+                    row1:str=line[i1+flagEffSLen:i2]
+                    row2:str=row1 if row1[-1]!='}' else row1[:-1]
+                    oEffL.append(row2)
                     list1[nowIndex]=(oLine,oEffL,u)
                 elif flagSkillE in line:
                     list1:list=ret.get(currSkill,[])
@@ -307,11 +309,11 @@ class AnalyseFALog:
                     
                     row=[""]*20
                     for (oLine,oEffList,useTime) in ret[k]:
-                        row[0]=k
+                        row[0]=f"\t{k}"
                         row[1]=useTime
                         row[2]=len(oEffList)
-                        row[3]=oLine[:-40]
-                        row[4]=f"'{','.join(oEffList)}"
+                        row[3]=oLine[:-49]
+                        row[4]=f"\t{','.join(oEffList)}"
                         writer.writerow(row) 
 
                    

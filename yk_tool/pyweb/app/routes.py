@@ -1,9 +1,10 @@
 import flask
+
 bp=flask.Blueprint('main',__name__)
 
 @bp.route('/')
 def home():
-    return 'my home <hr>'
+    return flask.render_template('index.html',title='Welcome Page', name='fish')
 
 @bp.route('/info/<name>',methods=['get','post'])
 def info(name):

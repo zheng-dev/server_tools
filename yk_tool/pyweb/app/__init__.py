@@ -7,4 +7,9 @@ def create_app(root)->flask.Flask:
     from . import routes
     routes.bp.root_path=root
     app.register_blueprint(routes.bp)    
+
+    @app.errorhandler(Exception)
+    def err(err):
+        # print(err) #注意打印量
+        return f'nginx {500}<hr/>',500
     return app

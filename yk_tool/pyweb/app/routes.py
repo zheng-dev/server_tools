@@ -10,8 +10,7 @@ def home():
 def favicon():
     import os
     print('ico')
-    return flask.send_from_directory(os.path.join(bp.root_path, 'static'),
-                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
+    return flask.send_from_directory('static','favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 @bp.route('/info/<name>',methods=['get','post'])
 def info(name):

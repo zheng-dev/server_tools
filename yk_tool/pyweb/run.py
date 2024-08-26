@@ -1,12 +1,14 @@
 import logging.handlers
+import logging
+
 import app
 from waitress import serve
-import logging
+
 
 if __name__=='__main__':
     # 配置日志记录-
-    logger=logging.getLogger(app.LOG_NAME)
-    logger.setLevel(level=logging.DEBUG)
+    #logger=logging.getLogger(app.LOG_NAME) #不用get,直接全局
+    #logging.setLevel(level=logging.DEBUG)
 
     #设置日志格式
     fmt = '%(asctime)s - %(pathname)s[line:%(lineno)d] - %(levelname)s: %(message)s'
@@ -17,7 +19,8 @@ if __name__=='__main__':
     hand.setFormatter(format_str)
     #日志文件名
     hand.namer=lambda x:f'{x.split('.')[-1]}waitress.log'
-    logger.addHandler(hand)
+    logging.basicConfig(level=logging.DEBUG,handlers=[hand])
+    #logging.addHandler(hand)
 
     app1=app.create_app('./')
     #app1.run(host='192.168.22.9',port=80)

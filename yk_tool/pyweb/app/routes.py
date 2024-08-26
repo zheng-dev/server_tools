@@ -1,4 +1,4 @@
-import flask,logging,app
+import flask,logging
 
 bp=flask.Blueprint('main',__name__)
 
@@ -25,8 +25,7 @@ def favicon():
 
 @bp.route('/info/<name>',methods=['get','post'])
 def info(name):
-    logger=logging.getLogger(app.LOG_NAME)
-    logger.debug('info access')
+    logging.debug('info access')
     a:str=flask.request.args.get('name2',type=str)
     b:int=flask.request.form.get('name',type=int,default=0)
     html:str= f'<h1>file={name},a={a},b={b}</h1><img src="/static/room.png"/>'

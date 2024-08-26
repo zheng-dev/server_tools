@@ -6,21 +6,23 @@ bp=flask.Blueprint('main',__name__)
 def home():
     return flask.render_template('index.html',title='Welcome Page', name='fish')
 
-svrEtag=''
+svrEtag:str=''
 @bp.route('/favicon.ico')
 def favicon():
     import os
-    etag=flask.request.headers.get('If-None-Match','no')
+    etag:str=flask.request.headers.get('If-None-Match','no').strip('"')
     global svrEtag
-    print('ico',etag,svrEtag)
     if etag==svrEtag:
+        logging.debug('etag ok {0},{1}'.format(etag,svrEtag))
         return '',304
     txt=flask.send_from_directory('static','favicon.ico', mimetype='image/vnd.microsoft.icon')
     response = flask.make_response(txt)
     #response.cache_control.max_age = 3600  # 设置缓存时间为1小时
     nEtag,isWeek=response.get_etag()
-    print(nEtag)
     svrEtag=nEtag
+
+    logging.debug('etag no {0},{1},{2}'.format(etag,nEtag,svrEtag))
+    
     return response
 
 @bp.route('/info/<name>',methods=['get','post'])

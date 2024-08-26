@@ -6,6 +6,13 @@ bp=flask.Blueprint('main',__name__)
 def home():
     return flask.render_template('index.html',title='Welcome Page', name='fish')
 
+@bp.route('/favicon.ico')
+def favicon():
+    import os
+    print('ico')
+    return flask.send_from_directory(os.path.join(bp.root_path, 'static'),
+                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
 @bp.route('/info/<name>',methods=['get','post'])
 def info(name):
     a:str=flask.request.args.get('name2',type=str)

@@ -24,4 +24,4 @@ if __name__=='__main__':
 
     app1=app.create_app('./')
     #app1.run(host='192.168.22.9',port=80)
-    serve(app1,port=80,threads=4,host='192.168.22.9',ident='nginx 1.0.0',url_scheme='https')
+    serve(app1,port=443,threads=4,host='192.168.22.9',ident='nginx 1.0.0')

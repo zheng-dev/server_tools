@@ -2,3 +2,4 @@ __pycache__/
 cfg.txt
 up/
 *.log
+yk_tool/pyweb/instance/

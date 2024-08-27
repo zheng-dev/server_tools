@@ -6,32 +6,45 @@ bp=flask.Blueprint('main',__name__)
 def home():
     return flask.render_template('index.html',title='Welcome Page', name='fish')
 
-svrEtag:str=''
-@bp.route('/favicon.ico')
-def favicon():
+svrEtag:dict[str,str]={}
+@bp.route('/<filename>.<exe>')
+def favicon(filename,exe):
     import os
     etag:str=flask.request.headers.get('If-None-Match','no').strip('"')
+    file:str=f'{filename}.{exe}'
     global svrEtag
-    if etag==svrEtag:
+    if etag!='no' and etag==svrEtag.get(file,''):
         logging.debug('etag ok {0},{1}'.format(etag,svrEtag))
         return '',304
-    txt=flask.send_from_directory('static','favicon.ico', mimetype='image/vnd.microsoft.icon')
-    response = flask.make_response(txt)
-    #response.cache_control.max_age = 3600  # 设置缓存时间为1小时
+    #bin=flask.send_from_directory('static','favicon.ico', mimetype='image/vnd.microsoft.icon')
+    response=flask.send_from_directory('static',file)
+    #response = flask.make_response(res1)
+    response.cache_control.max_age = 3600  # 设置缓存时间为1小时
     nEtag,isWeek=response.get_etag()
-    svrEtag=nEtag
+    svrEtag[file]=nEtag
 
-    logging.debug('etag no {0},{1},{2}'.format(etag,nEtag,svrEtag))
-    
+    logging.debug('etag no {3},{0},{1},{2}'.format(etag,nEtag,svrEtag,file))
     return response
 
-@bp.route('/info/<name>',methods=['get','post'])
-def info(name):
-    logging.debug('info access')
-    a:str=flask.request.args.get('name2',type=str)
-    b:int=flask.request.form.get('name',type=int,default=0)
-    html:str= f'<h1>file={name},a={a},b={b}</h1><img src="/static/room.png"/>'
-    res: flask.Response=flask.make_response(html)
+@bp.route('/db/<op>/<name>',methods=['get','post'])
+def info(op:str,name:str):
+    from . import models,db
+    dbRet:dict[str,str]={}
+    if op=='get':
+         user:models.User = models.User.query.get(name)
+         dbRet={user.username:user.username}
+    elif op=='all':
+         users:list[models.User] = models.User.query.all()  # 获取所有用户
+         for user in users:
+             dbRet[user.username]=user.email 
+    else:
+        a:str=flask.request.args.get('name2',type=str)
+        b:int=flask.request.form.get('name',type=int,default=0)
+        new_user = models.User(username=name, email=f'{name}@example.com')
+        dbRet={'ret':'ok'}
+        db.session.add(new_user)
+        db.session.commit()
+    res=flask.jsonify(dbRet)
     return res
 
 @bp.route('/upload',methods=['post'])

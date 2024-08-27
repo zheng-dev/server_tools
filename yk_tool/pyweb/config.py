@@ -1,2 +1,4 @@
 DEBUG=True
 SECRET_KEY='myabc'
+SQLALCHEMY_DATABASE_URI='sqlite:///example.db'  # 使用 SQLite 数据库
+SQLALCHEMY_TRACK_MODIFICATIONS=False

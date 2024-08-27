@@ -51,7 +51,7 @@ class AppCfg:
         except:
             return {}    
 ##浏览
-def browser(url:str,data:dict,charset='utf8',method='GET')->str:
+def browser(url:str,data:dict[str,any],charset='utf8',method='GET')->str:
     import urllib.parse,urllib.request,http.cookiejar,urllib.error
     header = {
     'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0',
@@ -71,9 +71,13 @@ def browser(url:str,data:dict,charset='utf8',method='GET')->str:
     cook_hand=urllib.request.HTTPCookieProcessor(cooks)
     opener=urllib.request.build_opener(cook_hand)
 
-    data = urllib.parse.urlencode(data).encode(charset)
-    req=urllib.request.Request(url, data, header,method=method)
-    logging.debug("req=%s",url)
+    data1:bytes =urllib.parse.urlencode(data)
+    if method=='GET':
+        req=urllib.request.Request(f'{url}?{data1}', None, header,method=method)
+    else:
+        req=urllib.request.Request(url, bytes(data1,encoding=charset), header,method=method)    
+    
+    logging.debug("req=%s==%s",url,data1)
     try:
         res=opener.open(req).read().decode(charset)
     except urllib.error.HTTPError as e:
@@ -100,7 +104,7 @@ def test_curl():
 
 def loop():
     cfg=AppCfg.cfg_json()
-    p={'num':'15'}
+    p={'filter':'-1'}
     reponse=browser(cfg['list'],p,'utf-8')
     if reponse[:9]=='http_err:':
         logging.info("%s",reponse)
@@ -114,5 +118,7 @@ if __name__=='__main__':
    logging.getLogger().setLevel(logging.DEBUG)
    logging.getLogger("requests").setLevel(logging.INFO)
    logging.info("Running maintenance as %s", 3)
+   #p={'name2':'-1'}
+   #reponse=browser('http://koo66.iok.la/',p,'utf-8')
    #test_curl()
    loop()

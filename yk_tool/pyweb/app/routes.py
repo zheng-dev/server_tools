@@ -2,9 +2,10 @@ import flask,logging
 
 bp=flask.Blueprint('main',__name__)
 
-@bp.route('/')
+@bp.route('/',methods=['get'])
 def home():
-    return flask.render_template('index.html',title='Welcome Page', name='fish')
+    a:str=flask.request.args.get('name',type=str)
+    return flask.render_template('index.html',title='Welcome Page', name=a)
 
 svrEtag:dict[str,str]={}
 @bp.route('/<filename>.<exe>')

@@ -110,7 +110,8 @@ class MyJira:
     def _do_jira_check(self,html:str)->list[str]:
         import lxml.etree
         tree=lxml.etree.HTML(html)
-        matchL:list[str] = tree.xpath('//td[@class="summary"]/p/a/@href')
+        #'//td[@class="issuerow"]/p/a/@href'
+        matchL:list[str] = tree.xpath('//tr[@class="issuerow"]/@data-issuekey')
 
         newL=[]
         old=self.oldJira

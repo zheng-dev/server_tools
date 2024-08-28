@@ -140,8 +140,12 @@ def win_jira():
     root.geometry("300x190+900+110")   # #窗口位置500后面是字母x
     root.lift()
     #root.attributes('-toppost',True)
-    l1=tkinter.Label(root,text='',anchor='w')
-    l1.pack()
+    l1=tkinter.Text(root,height=20,width=38)
+    l1.pack(side=tkinter.LEFT)
+    yscrollbar = tkinter.Scrollbar(root)
+    yscrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
+    yscrollbar.config(command=l1.yview)
+    l1.config(yscrollcommand=yscrollbar.set)
 
     jira=MyJira()
     def update():
@@ -149,7 +153,7 @@ def win_jira():
         r=jira.jira()
         if r ==None:pass
         elif len(r)>0:
-            l1.configure(text='\n'.join(r))
+            l1.insert(tkinter.END,'\n'.join(r))
             root.deiconify()
         root.after(15000,update)
     root.after(10,update)

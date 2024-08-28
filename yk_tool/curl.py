@@ -154,7 +154,7 @@ def win_jira():
         r=jira.jira()
         if r ==None:pass
         elif len(r)>0:
-            tStr=time.strftime('==%H:%M:%S==\n',time.localtime())
+            tStr=time.strftime('==%m/%d %H:%M:%S==\n',time.localtime())
             l1.insert(1.0,tStr+('\n'.join(r)))
             root.deiconify()
         root.after(15000,update)

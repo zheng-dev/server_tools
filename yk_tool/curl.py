@@ -77,7 +77,7 @@ def browser(url:str,data:dict[str,any],charset='utf8',method='GET')->str:
     else:
         req=urllib.request.Request(url, bytes(data1,encoding=charset), header,method=method)    
     
-    logging.debug("req=%s==%s",url,data1)
+    logging.debug("url=%s ;data=%s",url,data1)
     try:
         res=opener.open(req).read().decode(charset)
     except urllib.error.HTTPError as e:
@@ -88,37 +88,76 @@ def browser(url:str,data:dict[str,any],charset='utf8',method='GET')->str:
     return res
 
 
-def test_curl():
-    cfg=AppCfg.cfg_json()
-    uName=cfg['user']
-    data = {'os_username':uName,'os_password':cfg['pwd']}
-    
-    r=browser(cfg['login'],data,'utf8',method='POST')
-    if f'<meta name="ajs-remote-user" content="{uName}">' in r:
-        reponse=browser(cfg['list'],{'selectPageId':'11706'},'utf8')
-        with open('t.htm','w+',encoding='utf-8') as f:
-            f.write(reponse)
-            import webbrowser
-            webbrowser.open('t.htm')
-    return       
+## 检查jira
+class MyJira:
+    _instance_lock = threading.Lock()
+    oldJira:list[str]=[]
+    def jira(self)->None|list[str]:
+        cfg=AppCfg.cfg_json()
+        p={'reset':'true','tempMax':100}
+        uName=cfg['user']
+        reponse=browser(cfg['list'],p,'utf-8')
+        if reponse[:9]=='http_err:':
+            logging.warn("%s",reponse)
+        elif f'<meta name="ajs-remote-user" content="{uName}">' in reponse:
+            return self._do_jira_check(reponse)
+        else:    
+            data = {'os_username':uName,'os_password':cfg['pwd']}
+            browser(cfg['login'],data,'utf8',method='POST')
+            #尝试登录后继续
+            self.jira()
+    ##检查有没有新的        
+    def _do_jira_check(self,html:str)->list[str]:
+        import lxml.etree
+        tree=lxml.etree.HTML(html)
+        matchL:list[str] = tree.xpath('//td[@class="summary"]/p/a/@href')
 
-def loop():
-    cfg=AppCfg.cfg_json()
-    p={'filter':'-1'}
-    reponse=browser(cfg['list'],p,'utf-8')
-    if reponse[:9]=='http_err:':
-        logging.info("%s",reponse)
-    else:    
+        newL=[]
+        old=self.oldJira
+        for i in matchL:
+            if i not in old:
+                newL.append(i)
+
+        self.oldJira=matchL#更新
+        return newL
+    ##
+    def _save_html(self,html:str)->None:
         with open('t.htm','w+',encoding='utf-8') as f:
-            f.write(reponse)
-            import webbrowser
-            webbrowser.open('t.htm')
+                f.write(html)
+                import webbrowser
+                webbrowser.open('t.htm')
+    ##单例用
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(MyJira, "_instance"):
+            with MyJira._instance_lock:
+                if not hasattr(MyJira, "_instance"):
+                     MyJira._instance = object.__new__(cls)  
+        return MyJira._instance 
+def win_jira():
+    import tkinter,tkinter.messagebox
+    root=tkinter.Tk()
+    root.title("jira")    # #窗口标题
+    root.geometry("300x190+900+110")   # #窗口位置500后面是字母x
+    root.lift()
+    #root.attributes('-toppost',True)
+    l1=tkinter.Label(root,text='',anchor='w')
+    l1.pack()
+
+    jira=MyJira()
+    def update():
+        nonlocal jira,root,l1
+        r=jira.jira()
+        if r ==None:pass
+        elif len(r)>0:
+            l1.configure(text='\n'.join(r))
+            root.deiconify()
+        root.after(15000,update)
+    root.after(10,update)
+
+    root.mainloop()
+    return       
 
 if __name__=='__main__':
    logging.getLogger().setLevel(logging.DEBUG)
-   logging.getLogger("requests").setLevel(logging.INFO)
    logging.info("Running maintenance as %s", 3)
-   #p={'name2':'-1'}
-   #reponse=browser('http://koo66.iok.la/',p,'utf-8')
-   #test_curl()
-   loop()
+   win_jira()

@@ -8,26 +8,29 @@ import os,sys
 
 ARGSV=[]
 def main():
-   sig_hand()
-   if len(sys.argv)>1:
-       if sys.argv[1]=="-line":
-           d_line_cmd()
-       elif sys.argv[1]=="-fx":
-           global ARGSV
-           ARGSV=sys.argv
-           AnalyseFALog.analyse()    
-       else:
-           Find().find()
-   else:
-       print(os.get_terminal_size())
-       print('''
+   help='''
 从匹配的文件中查找内容，显示所在文件名和行数
 py -m flog log/fight.l* {use_mill }      
 显示指定文件的行数的内容
 py -m flog -line xxxx.log 3     
 调用日志分析事务                                               
-py -m flog -fx              
-             ''')
+py -m flog -fxa fight_analysis2.log
+py -m flog -fxe event.txt
+                           
+             '''
+   sig_hand()
+   if len(sys.argv)>1:
+       if sys.argv[1]=="-line":
+           d_line_cmd()
+       elif sys.argv[1]=="-fxa":
+           AnalyseFALog.analyse(sys.argv)
+       elif sys.argv[1]=="-fxe":
+           Event.analyse(sys.argv)     
+       else:
+           Find().find()
+   else:
+       print(os.get_terminal_size())
+       print(help)
    return
 #检查
 class Find:
@@ -161,8 +164,13 @@ def d_line_(file:str,lineNumArg:int):
 
 ##分析event用时日志
 class Event:
-    def analyse():
-        (lineNum,condLineNum,kvList)=Event.clear_data()
+    def analyse(args:list[str]):
+        f='event.txt'
+        try:
+            f=args[2]
+        except:pass
+
+        (lineNum,condLineNum,kvList)=Event.clear_data(f)
         print("总条数{0};100ms的条数{1}".format(lineNum,condLineNum))
         Event.save_ret(kvList)
         return
@@ -182,8 +190,8 @@ class Event:
 
     ##整理出数据
     ##ret:(lineNum,condLineNum,kvList)
-    def clear_data()->tuple[int, int, dict]:
-        with open('event.txt','r',-1,'utf8') as fPtr:
+    def clear_data(logFile:str)->tuple[int, int, dict]:
+        with open(logFile,'r',-1,'utf8') as fPtr:
             lineNum=0 #总条数
             condLineNum=0 #满足过虑条件行数
             kvList={} #结果
@@ -231,10 +239,8 @@ class Event:
 class AnalyseFALog:
     __tab_skill_eff_do:dict[str,list[tuple[str,list,int]]]={} #技能生效触发的效果sid
     __fileName=''
-    def analyse():
-        global ARGSV
-
-        a=AnalyseFALog(ARGSV[2])
+    def analyse(argsv:list[str]):
+        a=AnalyseFALog(argsv[2])
         
         a.do()
         a.save_ret()

@@ -135,7 +135,7 @@ def main_win():
         if r ==None:pass
         elif len(r)>0:
             tStr=time.strftime(f'==%m/%d %H:%M:%S num:{len(r)}==\n',time.localtime())
-            l1.insert(1.0,tStr+('\n'.join(r)))
+            l1.insert(1.0,tStr+('\n'.join(r))+'\n')
             root.deiconify()
         root.after(15000,update)
     root.after(10,update)

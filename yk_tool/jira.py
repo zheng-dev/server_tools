@@ -114,7 +114,7 @@ class MyJira:
         return MyJira._instance
 ##     
 def main_win():
-    import tkinter
+    import tkinter,keyboard
     logging.info("main_win")
     root=tkinter.Tk()
     root.title("jira")    # #窗口标题
@@ -139,6 +139,17 @@ def main_win():
             root.deiconify()
         root.after(15000,update)
     root.after(10,update)
+
+    # 双击隐藏
+    def duble_click(event):
+        nonlocal root
+        root.withdraw()
+    root.bind('<Double-Button-1>',duble_click)
+
+    # 绑定全局快捷键
+    def on_key_press(args):
+        root.deiconify()
+    keyboard.add_hotkey('ctrl+a+c', on_key_press, args=('From global keystroke',))     
 
     root.mainloop()
     return       

@@ -1,3 +1,9 @@
+#
+# coding=utf-8
+#py3.12.5
+#Auther:zhengzhichun [zheng6655@163.com]
+#Date: 2024-08-29
+#decription:web的启动入口
 import logging.handlers
 import logging
 

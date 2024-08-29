@@ -55,3 +55,23 @@ py -c "import sys;sys.path.append('F:\server_tools\yk_tool');print(sys.path)"
 ```bat
 pypi-server -p 8080 packages/
 ```
+
+vscode代码片段
+--------------
+`ctrl+shift+p`输入snippets选全局
+```json
+[
+    "py头信息": {
+		"prefix": "pyhead",
+		"body": [
+			"#",
+			"# coding=utf-8",
+			"#py3.12.5",
+			"#Auther:zhengzhichun [zheng6655@163.com]",
+			"#Date: $CURRENT_YEAR-$CURRENT_MONTH-$CURRENT_DATE",
+			"#decription:"
+		],
+		"description": "py头信息"
+	}
+]    
+```

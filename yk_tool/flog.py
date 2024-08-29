@@ -1,9 +1,10 @@
 #
 # coding=utf-8
-#py3.11
-# 运行方式：python flog.py 
-import os,shutil
-import sys
+#py3.12.5
+#Auther:zhengzhichun [zheng6655@163.com]
+#Date: 2024-08-29
+#decription:根据日志编写提取逻辑进行分析出日志的需求结果--需求变动就改
+import os,sys
 
 ARGSV=[]
 def main():

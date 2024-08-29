@@ -1,8 +1,10 @@
 #
 # coding=utf-8
-#py3.11
-# 运行方式：python st.py
-import os,shutil,sys
+#py3.12.5
+#Auther:zhengzhichun [zheng6655@163.com]
+#Date: 2024-08-29
+#decription:比较a,b两个文件段,分析出b新加了哪些,老的是哪些
+import os,sys
 
 def main():
     current_path = os.path.dirname(__file__)

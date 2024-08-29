@@ -1,3 +1,9 @@
+#
+# coding=utf-8
+#py3.12.5
+#Auther:zhengzhichun [zheng6655@163.com]
+#Date: 2024-08-29
+#decription:路由相关
 import flask,logging
 
 bp=flask.Blueprint('main',__name__)

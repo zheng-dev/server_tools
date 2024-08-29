@@ -1,7 +1,9 @@
 #
 # coding=utf-8
-#py3.11
-# 运行方式：python delete_db.py ../
+#py3.12.5
+#Auther:zhengzhichun [zheng6655@163.com]
+#Date: 2024-08-29
+#decription:删除文件db的增量bak文件
 import os,shutil
 
 import sys

@@ -1,7 +1,9 @@
 #
 # coding=utf-8
-#py3.11
-# 运行方式：python f.py ../
+#py3.12.5
+#Auther:zhengzhichun [zheng6655@163.com]
+#Date: 2024-08-29
+#decription:查找idea目录中erlang项目的头文件目录,加入到iml的include配置中
 import os
 #,shutil,sys
 

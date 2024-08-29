@@ -1,3 +1,9 @@
+#
+# coding=utf-8
+#py3.12.5
+#Auther:zhengzhichun [zheng6655@163.com]
+#Date: 2024-08-29
+#decription:db的orm相关
 from . import db
 class User(db.Model):
     id:int = db.Column(db.Integer, primary_key=True)

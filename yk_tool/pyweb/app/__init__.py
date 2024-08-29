@@ -1,6 +1,11 @@
+#
+# coding=utf-8
+#py3.12.5
+#Auther:zhengzhichun [zheng6655@163.com]
+#Date: 2024-08-29
+#decription:创建app及初始,包括db的orm
 import flask,logging
 from flask_sqlalchemy import SQLAlchemy
-
 db:SQLAlchemy=None
 def create_app(root)->flask.Flask:
     app:flask.Flask=flask.Flask(__name__)

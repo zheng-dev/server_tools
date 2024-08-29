@@ -1,0 +1,9 @@
+__pycache__/
+up/
+*.log
+instance/
+Lib/
+Scripts/
+var/
+pyvenv.cfg
+Include/

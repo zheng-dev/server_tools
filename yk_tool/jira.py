@@ -11,13 +11,13 @@ import threading,time,logging
 def browser(url:str,data:dict[str,any],charset='utf8',method='GET',cookiefile='browser.cookie')->tuple[bool,str]:
     import urllib.parse,urllib.request,http.cookiejar,urllib.error
     header = {
-    'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0',
-    'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/png,image/svg+xml,*/*;q=0.8',
-    'Accept-Language':'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2',
+    'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0',
+    'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'Accept-Language':'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
     #'Accept-Encoding':'gzip, deflate',
     'Connection':'keep-alive',
-    'Upgrade-Insecure-Requests':'1',
-    'Priority':'u=0, i'
+    'Cache-Control':'max-age=0',
+    'Upgrade-Insecure-Requests':'1'
     }
     cooks=http.cookiejar.MozillaCookieJar(filename=cookiefile)
     try:
@@ -44,7 +44,7 @@ def browser(url:str,data:dict[str,any],charset='utf8',method='GET',cookiefile='b
 ##
 def test_b():
     print('start')
-    r=browser('http://xx/x/',{},cookiefile=AppCfg.cook_file())
+    r=browser('http://192.168.22.9/',{'name':9996},cookiefile=AppCfg.cook_file())
     print(r)
 ##字典cfg
 # {"user":"xx","pwd":"xx","login":"xx/login.jsp","list":"xx/secure/views/bulkedit/BulkEdit1!default.jspa"} 
@@ -65,25 +65,31 @@ class AppCfg:
 class MyJira:
     _instance_lock = threading.Lock()
     oldJira:list[str]=[]
+    __isLogin:bool=False
     ##
     def jira(self)->None|list[str]:
         cfg=AppCfg.cfg_json()
-        p={'reset':'true','tempMax':100}
+        #没登录就先登录 如果取jira失败就再登录
         uName=cfg['user']
         cookFile=AppCfg.cook_file()
-        (isOk,reponse)=browser(cfg['list'],p,'utf-8',cookiefile=cookFile)
-        if not isOk:
-            logging.warn("list err:%s",reponse)
-        elif f'<meta name="ajs-remote-user" content="{uName}">' in reponse:
-            return self._do_jira_check(reponse)
-        else:    
+        if self.__isLogin:
+            p={'reset':'true','tempMax':30}
+            (isOk,reponse)=browser(cfg['list'],p,'utf-8',cookiefile=cookFile)
+            if isOk and  f'<meta name="ajs-remote-user" content="{uName}">' in reponse:
+                return self._do_jira_check(reponse)
+            else:
+                self.__isLogin=False
+                logging.warning("list err:%s",reponse)
+        else:
             data = {'os_username':uName,'os_password':cfg['pwd']}
             (isOk,reponse)=browser(cfg['login'],data,'utf8',method='POST',cookiefile=cookFile)
             if not isOk:
-                logging.warn("login err:%s",reponse)
+                logging.warning("login err2:%s",reponse)
             elif f'<meta name="ajs-remote-user" content="{uName}">' in reponse:
+                self.__isLogin=True
                 #尝试登录成功后继续
-                self.jira()
+                self.jira()    
+
     ##检查有没有新的        
     def _do_jira_check(self,html:str)->list[str]:
         import lxml.etree
@@ -114,7 +120,7 @@ class MyJira:
         return MyJira._instance
 ##     
 def main_win():
-    import tkinter,keyboard
+    import tkinter
     logging.info("main_win")
     root=tkinter.Tk()
     root.title("jira")    # #窗口标题
@@ -137,7 +143,7 @@ def main_win():
             tStr=time.strftime(f'==%m/%d %H:%M:%S num:{len(r)}==\n',time.localtime())
             l1.insert(1.0,tStr+('\n'.join(r))+'\n')
             root.deiconify()
-        root.after(15000,update)
+        root.after(120000,update)
     root.after(10,update)
 
     # 双击隐藏
@@ -147,16 +153,35 @@ def main_win():
     root.bind('<Double-Button-1>',duble_click)
 
     # 绑定全局快捷键
-    def on_key_press(args):
-        root.deiconify()
-    keyboard.add_hotkey('ctrl+a+c', on_key_press, args=('From global keystroke',))     
+    BindKey().hook(['ctrl','q','0'],root.deiconify)
 
     root.mainloop()
-    return       
+    return
+
+##组合键
+import keyboard
+class BindKey:
+    __keys:list[str]=[]
+    __onKeys:list[str]=[]
+    __call=None
+
+    def __on_key(self,event:keyboard.KeyboardEvent):
+        if event.event_type=='up':
+            self.__onKeys=[]
+        elif event.name in self.__keys and event.event_type=='down':
+            self.__onKeys.append(event.name)
+            if self.__keys==self.__onKeys:
+                self.__call()
+
+    def hook(self,keys:list[str],callback):
+        self.__call=callback
+        self.__keys=keys
+        keyboard.hook(self.__on_key) # 锁屏回来也生效
 ##
 if __name__=='__main__':
-   logging.getLogger().setLevel(logging.WARNING)   
-   main_win()
+   logging.getLogger().setLevel(logging.DEBUG)   
+   test_b()
+   #main_win()
 
 
 

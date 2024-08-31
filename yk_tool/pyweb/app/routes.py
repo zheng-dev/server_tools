@@ -10,8 +10,12 @@ bp=flask.Blueprint('main',__name__)
 
 @bp.route('/',methods=['get'])
 def home():
+    u=flask.request.cookies.get('u')
     a:str=flask.request.args.get('name',type=str)
-    return flask.render_template('index.html',title='Welcome Page', name=a)
+    html=flask.render_template('index.html',title='Welcome Page', name=a,u=u)
+    resp=flask.make_response(html)
+    resp.set_cookie('u','abcde')
+    return resp
 
 svrEtag:dict[str,str]={}
 @bp.route('/<filename>.<exe>')

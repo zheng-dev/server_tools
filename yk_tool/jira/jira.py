@@ -40,6 +40,7 @@ class MyJira:
     oldJira:list[str]=[]
     __isLogin:bool=False
     session=HTMLSession()
+    __cfg:dict[str,str]=AppCfg.cfg_json()
     __head = {
     'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0',
     'Accept-Language':'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
@@ -48,7 +49,7 @@ class MyJira:
     }
     ##
     def jira(self)->None|list[str]:
-        cfg:dict[str,str]=AppCfg.cfg_json()
+        cfg=self.__cfg
         #没登录就先登录 如果取jira失败就再登录
         uName:str=cfg['user']
         if self.__isLogin:

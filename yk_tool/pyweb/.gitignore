@@ -1,9 +1,3 @@
-__pycache__/
 up/
 *.log
-instance/
-Lib/
-Scripts/
-var/
-pyvenv.cfg
-Include/
+yk_tool/pyweb/instance/

@@ -1,3 +1,4 @@
+venvweb/
 up/
 *.log
-yk_tool/pyweb/instance/
+instance/

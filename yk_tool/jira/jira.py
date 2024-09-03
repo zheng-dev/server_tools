@@ -156,7 +156,7 @@ def main_win():
     def hide(event):
         nonlocal root
         root.withdraw()
-    root.bind("<Control-z>", hide)
+    root.bind("<Escape>", hide)
 
     # 打开jira号的详情
     def jira_info(event):
@@ -165,7 +165,7 @@ def main_win():
         webbrowser.open(f'{browseUrl}{t}')
     l1.bind('<Control-Button-1>',jira_info)
 
-    # 绑定全局快捷键
+    # 显示窗口-绑定全局快捷键
     BindKey().hook(['ctrl','q','0'],root.deiconify)
 
     root.mainloop()

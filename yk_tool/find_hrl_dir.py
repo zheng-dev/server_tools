@@ -5,21 +5,15 @@
 #Date: 2024-08-29
 #decription:查找idea目录中erlang项目的头文件目录,加入到iml的include配置中
 import os
+import xml.etree.ElementTree as et
 #,shutil,sys
 
-GAME='game.iml'#文件
+GAME='.idea/modules.xml'#文件
 
-# def main():
-#    if len(sys.argv)>1:
-#        dir=sys.argv[1]
-#    else:
-#        dir="."
-#    FindHrlDir.go(dir)
-
-#    return
 
 class FindHrlDir:
-    _GFindRet=[]#递归遍历目录时存path用
+    __iml:str=''
+    __GFindRet:list[str]=[]#递归遍历目录时存path用
     def go(dir):
         os.chdir(dir)
         a=FindHrlDir()
@@ -27,12 +21,25 @@ class FindHrlDir:
         a._find_dir("","./")
         os.chdir('../')
         a._after_find()
+        del a
 
     def __init__(self) -> None:
         #检查目录是否是idea项目
-        if not os.path.isfile(GAME):
+        if os.path.isfile(GAME):
+            try:
+                tree=et.parse(GAME)
+                p_root=tree.getroot()
+                ModL=p_root.find('component[@name="ProjectModuleManager"]/modules')
+                m=ModL.find('module')
+                fileStr=m.attrib['filepath']
+                fileStr1=(fileStr.split('/'))[-1]
+                print(fileStr1)
+                self.__iml=fileStr1
+            except:
+                raise Exception(f"{GAME} xml_err")    
+        else:    
             raise Exception("project_dir_err")
-        pass
+        
     #查找出头目录到全局变量中
     def _find_dir(self,Prent:str,path:str)->None:
         os.chdir(path)
@@ -45,19 +52,17 @@ class FindHrlDir:
             else:
                 if (os.path.splitext(f)[-1])==".hrl":
                         isHrlDir=True
-                        self._GFindRet.append("{0}{1}".format(Prent,path))
+                        self.__GFindRet.append("{0}{1}".format(Prent,path))
                 pass
         if Prent!="":
             os.chdir("../")
         return
     #使用全局变量的目录结果生成文件
     def _after_find(self)->None:
-        import xml.etree.ElementTree as et
         try:
-            tree=et.parse(GAME)
+            tree=et.parse(self.__iml)
             p_root=tree.getroot()
-            cpt=p_root.find('component')
-            ctt=cpt.find('content')
+            ctt=p_root.find('component[@inherit-compiler-output="true"]/content')
             sFList=ctt.findall('sourceFolder')
             #整理出已经有的dir
             oldDir=[]
@@ -68,12 +73,13 @@ class FindHrlDir:
                 except:
                     pass        
             #追加搜到的dir
-            for newI in self._GFindRet:
+            for newI in self.__GFindRet:
                 pathStr=f"file://$MODULE_DIR$/plugin{newI[2:]}"    
                 if pathStr not in oldDir:
                     et.SubElement(ctt,'sourceFolder',{'url':pathStr,'type':'erlang-include'})
+            self.__GFindRet=[] #重置结果
             et.indent(tree,'\t') #xml换行
-            tree.write(GAME,"UTF-8",True,None,'xml')
+            tree.write(self.__iml,"UTF-8",True,None,'xml')
             
         except Exception as a:
             print("xml_err:{0}".format(a.args()))    

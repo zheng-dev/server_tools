@@ -4,7 +4,7 @@
 #Auther:zhengzhichun [zheng6655@163.com]
 #Date: 2024-08-29
 #decription:监听指定jira中的帐号是不是分配了新的jira
-import threading,time,logging
+import threading,time,logging,webbrowser
 from requests import Response
 from requests_html import HTMLSession  
 
@@ -46,7 +46,7 @@ class MyJira:
     oldJira:list[str]=[]
     __isLogin:bool=False
     session=HTMLSession()
-    __cfg:dict[str,str]=AppCfg.cfg_json()
+    cfg:dict[str,str]=AppCfg.cfg_json()
     __head = {
     'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0',
     'Accept-Language':'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
@@ -55,7 +55,7 @@ class MyJira:
     }
     ##
     def jira(self)->None|list[str]:
-        cfg=self.__cfg
+        cfg=self.cfg
         #没登录就先登录 如果取jira失败就再登录
         uName:str=cfg['user']
         if self.__isLogin:
@@ -84,7 +84,8 @@ class MyJira:
                 for uri1 in cfg['after_login']:
                     print(uri1)
                     r: Response=self.session.get(uri1)
-                    r.html.render()   
+                    r.html.render()
+                       
                 # self._save_html(r.text)
                 #尝试登录成功后继续
                 return self.jira()  
@@ -110,8 +111,7 @@ class MyJira:
     ##
     def _save_html(self,html:str)->None:
         with open('t.htm','w+',encoding='utf-8') as f:
-                f.write(html)
-                import webbrowser
+                f.write(html)                
                 webbrowser.open('t.htm')
     ##单例用
     def __new__(cls, *args, **kwargs):
@@ -138,8 +138,10 @@ def main_win():
     l1.config(yscrollcommand=yscrollbar.set)
 
     jira=MyJira()
+    browseUrl=jira.cfg['browse']
     def update():
         nonlocal jira,root,l1
+
         r: None | list[str]=jira.jira()
         if r ==None:pass
         elif len(r)>0:
@@ -150,11 +152,18 @@ def main_win():
         root.after(120000,update)
     root.after(10,update)
 
-    # 双击隐藏
-    def duble_click(event):
+    # 隐藏
+    def hide(event):
         nonlocal root
         root.withdraw()
-    root.bind('<Double-Button-1>',duble_click)
+    root.bind("<Control-z>", hide)
+
+    # 打开jira号的详情
+    def jira_info(event):
+        nonlocal l1,browseUrl
+        t=l1.get(tkinter.SEL_FIRST,tkinter.SEL_LAST)
+        webbrowser.open(f'{browseUrl}{t}')
+    l1.bind('<Control-Button-1>',jira_info)
 
     # 绑定全局快捷键
     BindKey().hook(['ctrl','q','0'],root.deiconify)

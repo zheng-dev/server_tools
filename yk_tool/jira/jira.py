@@ -8,19 +8,25 @@ import threading,time,logging
 from requests import Response
 from requests_html import HTMLSession  
 
-def help():
+## 确认插件是否需要新装
+def ensure_chromium():
     import os,pathlib
     from pyppeteer import __chromium_revision__, __pyppeteer_home__
     
     DOWNLOADS_FOLDER = pathlib.Path(__pyppeteer_home__) / 'local-chromium'
     REVISION = os.environ.get('PYPPETEER_CHROMIUM_REVISION', __chromium_revision__)
-    help="""
-    从npmmirror 镜像站
-    https://registry.npmmirror.com/binary.html?path=chromium-browser-snapshots/Win_x64/1348689/
-    下载,(zip解决后)复制过来到
-    """
-    print(help)
-    print(f'{DOWNLOADS_FOLDER}/{REVISION}') # 路径
+    file:str=f'{DOWNLOADS_FOLDER}/{REVISION}'
+    logging.info('chromium %s',file)
+    if not os.path.exists(file):
+        # TODO 1检查当前目录zip(没就有下载),2解压到file目录
+        help="""
+        从npmmirror 镜像站
+        https://registry.npmmirror.com/binary.html?path=chromium-browser-snapshots/Win_x64/1348689/
+        下载,(zip解决后)复制过来到
+        """
+        logging.info('init chromium %s is none,need unzip %s',file,help)
+        print(help)
+        print(file) # 路径
     
 ##字典cfg
 class AppCfg:
@@ -113,6 +119,7 @@ class MyJira:
             with MyJira._instance_lock:
                 if not hasattr(MyJira, "_instance"):
                      MyJira._instance = object.__new__(cls)  
+        ensure_chromium()
         return MyJira._instance
 ##     
 def main_win():
@@ -178,5 +185,9 @@ class BindKey:
         keyboard.hook(self.__on_key) # 锁屏回来也生效
 ##
 if __name__=='__main__':
-   logging.getLogger().setLevel(logging.INFO)   
+   logging.basicConfig(format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s',
+                    level=logging.INFO,
+                    filename='jira.log',
+                    filemode='w')
+  
    main_win()

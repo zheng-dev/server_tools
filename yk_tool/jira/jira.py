@@ -4,9 +4,10 @@
 #Auther:zhengzhichun [zheng6655@163.com]
 #Date: 2024-08-29
 #decription:监听指定jira中的帐号是不是分配了新的jira
-import threading,time,logging,webbrowser
+import threading,asyncio,time,logging,webbrowser
 from requests import Response
-from requests_html import HTMLSession  
+from requests_html import HTMLSession
+import enum  
 
 ## 确认插件是否需要新装
 def ensure_chromium():
@@ -40,12 +41,20 @@ class AppCfg:
                     return json.load(f)
         except:
             return {}  
+        
+##状态枚举        
+class JiraState(enum.Enum):
+    LOGIN_OK=1
+    LOGIN_WAIT=2
+    LOGIN_NEED=3
+    NET_ERROR=4
+   
 ## 检查jira
 class MyJira:
     _instance_lock = threading.Lock()
     oldJira:list[str]=[]
-    __isLogin:bool=False
-    session=HTMLSession()
+    __isLogin:JiraState=JiraState.LOGIN_NEED
+    session2=HTMLSession()
     cfg:dict[str,str]=AppCfg.cfg_json()
     __head = {
     'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0',
@@ -53,45 +62,61 @@ class MyJira:
     'Cache-Control':'max-age=0',
     'upgrade-insecure-requests':'1'
     }
+
     ##
-    def jira(self)->None|list[str]:
+    def login(self):
+        cfg=self.cfg
+        uName:str=cfg['user']
+        data = {'os_username':uName,'os_password':cfg['pwd']}
+        data['os_destination']=''
+        data['user_role']=''
+        data['atl_token']=''
+        data['login']='登录'
+
+        lhead=self.__head
+        lhead['Content-Type']='application/x-www-form-urlencoded'
+        
+        r=self.session2.post(cfg['login'],data=data,headers=lhead)
+        if r.status_code!=200:
+            self.__isLogin=JiraState.NET_ERROR
+            logging.warning("login err2:%s==%s",r.status_code,r.text)
+        elif f'<meta name="ajs-remote-user" content="{uName}">' in r.text:
+            r.html.render()
+            for uri1 in cfg['after_login']:
+                r: Response=self.session2.get(uri1)
+                r.html.render()
+                self.__isLogin=JiraState.LOGIN_OK
+        
+    ##
+    def get_list(self)->None|list[str]:
         cfg=self.cfg
         #没登录就先登录 如果取jira失败就再登录
         uName:str=cfg['user']
-        if self.__isLogin:
-            r=self.session.get(cfg['list'])
-            if r.status_code==200 and  f'<meta name="ajs-remote-user" content="{uName}">' in r.text:
-                return self._do_jira_check(r.text)
-            else:
-                self.__isLogin=False
-                logging.warning("login err2:%s==%s",r.status_code,r.text)
+        r=self.session2.get(cfg['list'])
+        if r.status_code==200 and  f'<meta name="ajs-remote-user" content="{uName}">' in r.text:
+            return self._do_jira_check(r.text)
+        elif r.status_code!=200:
+            self.__isLogin=JiraState.NET_ERROR
         else:
-            data = {'os_username':uName,'os_password':cfg['pwd']}
-            data['os_destination']=''
-            data['user_role']=''
-            data['atl_token']=''
-            data['login']='登录'
+            self.__isLogin=JiraState.LOGIN_NEED
+            logging.warning("login err2:%s==%s",r.status_code,r.text)
 
-            lhead=self.__head
-            lhead['Content-Type']='application/x-www-form-urlencoded'
-            
-            r=self.session.post(cfg['login'],data=data,headers=lhead)
-            if r.status_code!=200:
-                logging.warning("login err2:%s==%s",r.status_code,r.text)
-            elif f'<meta name="ajs-remote-user" content="{uName}">' in r.text:
-                self.__isLogin=True
-                r.html.render()
-                for uri1 in cfg['after_login']:
-                    print(uri1)
-                    r: Response=self.session.get(uri1)
-                    r.html.render()
-                       
-                # self._save_html(r.text)
-                #尝试登录成功后继续
-                return self.jira()  
+    ##Rets:(jira列表,下次update时间)
+    def jira(self)->tuple[list[str],int]:
+        if self.__isLogin==JiraState.LOGIN_NEED:
+            self.login()
+            return (['wait_login'],5000)
+        elif self.__isLogin==JiraState.LOGIN_OK:
+            r= self.get_list()
+            if r is not None and len(r)>0:
+                return (r,120000)
             else:
-                # self._save_html(r.text)
-                pass      
+                # 确认最新状态
+                return self.jira()    
+        elif self.__isLogin==JiraState.LOGIN_WAIT:
+            return ([],5000)
+        else:
+           return (['net_error'],5000)    
 
     ##检查有没有新的        
     def _do_jira_check(self,html:str)->list[str]:
@@ -124,7 +149,11 @@ class MyJira:
 ##     
 def main_win():
     import tkinter
+    
     logging.info("main_win")
+    jira=MyJira()
+    jira.login()
+
     root=tkinter.Tk()
     root.title("jira")    # #窗口标题
     root.geometry("300x190+900+110")   # #窗口位置500后面是字母x
@@ -136,20 +165,18 @@ def main_win():
     yscrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
     yscrollbar.config(command=l1.yview)
     l1.config(yscrollcommand=yscrollbar.set)
-
-    jira=MyJira()
+    
     browseUrl=jira.cfg['browse']
     def update():
         nonlocal jira,root,l1
-
-        r: None | list[str]=jira.jira()
-        if r ==None:pass
-        elif len(r)>0:
-            tStr=time.strftime(f'==%m/%d %H:%M:%S num:{len(r)}==\n',time.localtime())
-            l1.insert(1.0,tStr+('\n'.join(r))+'\n')
+        r: tuple[list[str],int]=jira.jira()
+        (r1,ms)=r
+        if len(r1)>0:
+            tStr=time.strftime(f'==%m/%d %H:%M:%S num:{len(r1)}==\n',time.localtime())
+            l1.insert(1.0,tStr+('\n'.join(r1))+'\n')
             root.deiconify()
+        root.after(ms,update)
 
-        root.after(120000,update)
     root.after(10,update)
 
     # 隐藏

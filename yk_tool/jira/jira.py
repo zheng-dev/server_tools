@@ -4,7 +4,7 @@
 #Auther:zhengzhichun [zheng6655@163.com]
 #Date: 2024-08-29
 #decription:监听指定jira中的帐号是不是分配了新的jira
-import threading,asyncio,time,logging,webbrowser
+import threading,time,logging,webbrowser
 from requests import Response
 from requests_html import HTMLSession
 import enum  

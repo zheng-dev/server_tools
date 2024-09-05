@@ -75,8 +75,8 @@ class MyJira:
 
         lhead=self.__head
         lhead['Content-Type']='application/x-www-form-urlencoded'
-        
-        r=self.session2.post(cfg['login'],data=data,headers=lhead)
+        self.__isLogin=JiraState.LOGIN_WAIT
+        r:Response=self.session2.post(cfg['login'],data=data,headers=lhead)
         if r.status_code!=200:
             self.__isLogin=JiraState.NET_ERROR
             logging.warning("login err2:%s==%s",r.status_code,r.text)
@@ -105,7 +105,8 @@ class MyJira:
     def jira(self)->tuple[list[str],int]:
         if self.__isLogin==JiraState.LOGIN_NEED:
             self.login()
-            return (['wait_login'],5000)
+            # 确认最新状态
+            return self.jira() 
         elif self.__isLogin==JiraState.LOGIN_OK:
             r= self.get_list()
             if r is not None and len(r)>0:
@@ -114,7 +115,7 @@ class MyJira:
                 # 确认最新状态
                 return self.jira()    
         elif self.__isLogin==JiraState.LOGIN_WAIT:
-            return ([],5000)
+            return ([],7000)
         else:
            return (['net_error'],5000)    
 
@@ -145,14 +146,23 @@ class MyJira:
                 if not hasattr(MyJira, "_instance"):
                      MyJira._instance = object.__new__(cls)  
         ensure_chromium()
+        MyJira._instance.session2.browser # 把loop先在主线程开出来
         return MyJira._instance
+    ##
+    def __del__(self):
+        self.session2.close()
 ##     
 def main_win():
-    import tkinter
+    import tkinter,asyncio
     
     logging.info("main_win")
-    jira=MyJira()
-    jira.login()
+    jira=MyJira() #__new__时会创出event_loop
+    loop=asyncio.get_event_loop()
+    def l(a:MyJira,loo):
+        asyncio.set_event_loop(loo)
+        a.login()
+        pass
+    threading.Thread(target=l,args=(jira,loop,),name='tt').start()
 
     root=tkinter.Tk()
     root.title("jira")    # #窗口标题

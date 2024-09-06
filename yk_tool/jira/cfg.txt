@@ -1,4 +1,1 @@
-{"user":"xx","pwd":"xx","login":"http://xx/login.jsp",
-"after_login":["http://xx/issues/?filter=-1"],
-"browse":"http://xx/browse/",
-"list":"http://xx/secure/views/bulkedit/BulkEdit1!default.jspa?reset=true&tempMax=30"}
+{"user":"","pwd":"","host":"http:///"}

@@ -38,7 +38,15 @@ class AppCfg:
         import json
         try:
             with open('./cfg.txt','r+',-1,'utf-8-sig') as f:
-                    return json.load(f)
+                    cfg=json.load(f)
+                    host=cfg['host']
+                    cfg['login']=f"{host}login.jsp"
+                    # 登录后的必要请求
+                    cfg['after_login']=[f'{host}?filter=-1']
+                    cfg['browse']=f"{host}browse/" #浏览指定jira的信息
+                    # 帐号下jira列表
+                    cfg['list']=f"{host}secure/views/bulkedit/BulkEdit1!default.jspa?reset=true&tempMax=30"
+                    return cfg
         except:
             return {}  
         

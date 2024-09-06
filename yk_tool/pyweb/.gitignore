@@ -2,3 +2,4 @@ venvweb/
 up/
 *.log
 instance/
+*.spec

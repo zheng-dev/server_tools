@@ -7,7 +7,7 @@
 import threading,time,logging,webbrowser
 from requests import Response
 from requests_html import HTMLSession
-import enum  
+import enum,asyncio  
 
 ## 确认插件是否需要新装
 def ensure_chromium():
@@ -55,6 +55,7 @@ class MyJira:
     oldJira:list[str]=[]
     __isLogin:JiraState=JiraState.LOGIN_NEED
     session2=HTMLSession()
+    __sessionLoop:asyncio.AbstractEventLoop=None # 多线程登录时不卡ui
     cfg:dict[str,str]=AppCfg.cfg_json()
     __head = {
     'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0',
@@ -65,6 +66,7 @@ class MyJira:
 
     ##
     def login(self):
+        self.__isLogin=JiraState.LOGIN_WAIT
         cfg=self.cfg
         uName:str=cfg['user']
         data = {'os_username':uName,'os_password':cfg['pwd']}
@@ -75,7 +77,7 @@ class MyJira:
 
         lhead=self.__head
         lhead['Content-Type']='application/x-www-form-urlencoded'
-        self.__isLogin=JiraState.LOGIN_WAIT
+        
         r:Response=self.session2.post(cfg['login'],data=data,headers=lhead)
         if r.status_code!=200:
             self.__isLogin=JiraState.NET_ERROR
@@ -86,7 +88,14 @@ class MyJira:
                 r: Response=self.session2.get(uri1)
                 r.html.render()
                 self.__isLogin=JiraState.LOGIN_OK
-        
+    ##
+    def async_login(self):
+        def l(a:MyJira):
+            asyncio.set_event_loop(a.__sessionLoop)
+            a.login()
+            pass
+        threading.Thread(target=l,args=(self,),name='tt').start()
+        pass     
     ##
     def get_list(self)->None|list[str]:
         cfg=self.cfg
@@ -103,19 +112,21 @@ class MyJira:
 
     ##Rets:(jira列表,下次update时间)
     def jira(self)->tuple[list[str],int]:
+        logging.debug('state=%s',self.__isLogin)
         if self.__isLogin==JiraState.LOGIN_NEED:
-            self.login()
+            self.async_login()
             # 确认最新状态
             return self.jira() 
         elif self.__isLogin==JiraState.LOGIN_OK:
             r= self.get_list()
-            if r is not None and len(r)>0:
+            logging.debug('LIST=%s',r)
+            if r is not None and len(r)>=0:
                 return (r,120000)
             else:
                 # 确认最新状态
                 return self.jira()    
         elif self.__isLogin==JiraState.LOGIN_WAIT:
-            return ([],7000)
+            return ([],1000)
         else:
            return (['net_error'],5000)    
 
@@ -145,24 +156,23 @@ class MyJira:
             with MyJira._instance_lock:
                 if not hasattr(MyJira, "_instance"):
                      MyJira._instance = object.__new__(cls)  
+                     cls._instance.session2.browser # 把loop先在主线程开出来
+                     cls._instance.__sessionLoop=asyncio.get_event_loop() #子线程set
+
         ensure_chromium()
-        MyJira._instance.session2.browser # 把loop先在主线程开出来
+        
         return MyJira._instance
     ##
     def __del__(self):
+        logging.info('jire __del__')
         self.session2.close()
 ##     
 def main_win():
-    import tkinter,asyncio
+    import tkinter
     
     logging.info("main_win")
     jira=MyJira() #__new__时会创出event_loop
-    loop=asyncio.get_event_loop()
-    def l(a:MyJira,loo):
-        asyncio.set_event_loop(loo)
-        a.login()
-        pass
-    threading.Thread(target=l,args=(jira,loop,),name='tt').start()
+    jira.async_login()
 
     root=tkinter.Tk()
     root.title("jira")    # #窗口标题
@@ -206,6 +216,8 @@ def main_win():
     BindKey().hook(['ctrl','q','0'],root.deiconify)
 
     root.mainloop()
+    # tk主窗关闭后
+    logging.info('main_win exit')
     return
 
 ##组合键

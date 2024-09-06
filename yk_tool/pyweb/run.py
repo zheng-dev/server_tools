@@ -5,7 +5,7 @@
 #Date: 2024-08-29
 #decription:web的启动入口
 import logging.handlers
-import logging
+import logging,config
 
 import app
 from waitress import serve

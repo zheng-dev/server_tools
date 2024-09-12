@@ -4,9 +4,9 @@
 # Auther:zhengzhichun [zheng6655@163.com]
 # Date: 2024-08-29
 # decription:监听指定jira中的帐号是不是分配了新的jira
-import threading, time, logging, webbrowser
 from requests import Response
 from requests_html import HTMLSession
+import threading, time, logging, webbrowser
 import enum, asyncio
 
 
@@ -19,16 +19,31 @@ def ensure_chromium():
     REVISION = os.environ.get("PYPPETEER_CHROMIUM_REVISION", __chromium_revision__)
     file: str = f"{DOWNLOADS_FOLDER}/{REVISION}"
     logging.info("chromium %s", file)
-    if not os.path.exists(file):
-        # TODO 1检查当前目录zip(没就有下载),2解压到file目录
-        help = """
-        从npmmirror 镜像站
-        https://registry.npmmirror.com/binary.html?path=chromium-browser-snapshots/Win_x64/1348689/
-        下载,(zip解决后)复制过来到
-        """
-        logging.info("init chromium %s is none,need unzip %s", file, help)
-        print(help)
-        print(file)  # 路径
+    if not os.path.exists(f"{file}/chrome-win"):
+        try:
+            os.makedirs(file)
+        except:
+            pass
+        os.chdir(file)
+
+        import urllib.request, zipfile
+
+        zipName: str = "chrome-win.zip"
+        try:
+            with zipfile.ZipFile(zipName, "r") as zf:
+                print("start unzip")
+                zf.extractall()
+        except:
+            # 镜像下载地址
+            chromeZip: str = (
+                "https://registry.npmmirror.com/-/binary/chromium-browser-snapshots/Win_x64/1348689/chrome-win.zip"
+            )
+            print("start download. please wait...")
+            urllib.request.urlretrieve(chromeZip, zipName)
+            print("start unzip")
+            with zipfile.ZipFile(zipName, "r") as zf:
+                zf.extractall()
+        print("chrome ok==")
 
 
 ##字典cfg
@@ -182,10 +197,9 @@ class MyJira:
             with MyJira._instance_lock:
                 if not hasattr(MyJira, "_instance"):
                     MyJira._instance = object.__new__(cls)
+                    ensure_chromium()
                     cls._instance.session2.browser  # 把loop先在主线程开出来
                     cls._instance.__sessionLoop = asyncio.get_event_loop()  # 子线程set
-
-        ensure_chromium()
 
         return MyJira._instance
 

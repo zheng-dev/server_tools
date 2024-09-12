@@ -247,7 +247,7 @@ def main_win():
     l1.bind("<Control-Button-1>", jira_info)
 
     # 显示窗口-绑定全局快捷键
-    BindKey().hook(["ctrl", "q", "0"], root.deiconify)
+    BindKey().hook(["alt", "q", "0"], root.deiconify)
 
     root.mainloop()
     # tk主窗关闭后

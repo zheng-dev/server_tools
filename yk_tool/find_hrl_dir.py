@@ -93,10 +93,6 @@ class FindHrlDir:
 class AppCfg:
     last_dir = ""
 
-    def go():
-        a = AppCfg()
-        return a
-
     def serialize(self):
         # 使用instance的__dict__属性来获取实例的所有属性
         return {key: value for key, value in self.__dict__.items()}
@@ -125,17 +121,13 @@ class AppCfg:
             with open(self.__get_cfg(), "w+", -1, "utf-8-sig") as f:
                 json.dump(data, f)
 
-    def __del__(self):
-        self.save()
-        pass
-
 
 import tkinter, tkinter.messagebox
 
 
 class WFrame(tkinter.Tk):
     __me = None
-    cfg: dict = {}
+    cfg: AppCfg = None
     dir: tkinter.Entry = None
 
     def __new__(cls, *args, **argsK):
@@ -145,16 +137,15 @@ class WFrame(tkinter.Tk):
 
     def __init__(self, title1):
         super().__init__()
-        self.title = title1
+        self.title(title1)
         self.geometry("300x90+900+110")  # 窗口位置500后面是字母x
-        pass
 
     def display(self):
         l1 = tkinter.Label(self, text="项目路径")
         l1.pack()
         self.dir = tkinter.Entry(self, width=40)
 
-        self.cfg = AppCfg.go()
+        self.cfg = AppCfg()
         self.dir.insert(0, self.cfg.last_dir)
         self.dir.pack()
         self.dir.focus_set()
@@ -181,8 +172,11 @@ class WFrame(tkinter.Tk):
 
 
 def main():
-    WFrame("iml-hrl目录增加").display().mainloop()
+    a = WFrame("iml-hrl目录增加").display()
+    a.mainloop()
+    a.cfg.save()
 
 
 if __name__ == "__main__":
     main()
+    print("over")

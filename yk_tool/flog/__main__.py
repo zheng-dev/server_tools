@@ -47,4 +47,3 @@ def sig_hand():
 
 if __name__ == "__main__":
     main()
-    print("=====")

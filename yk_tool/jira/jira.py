@@ -56,8 +56,9 @@ class AppCfg:
     def cfg_json() -> dict:
         import json
 
+        cfgFile: str = ".cfg.txt"
         try:
-            with open("./cfg.txt", "r+", -1, "utf-8-sig") as f:
+            with open(cfgFile, "r+", -1, "utf-8-sig") as f:
                 cfg = json.load(f)
                 host = cfg["host"]
                 cfg["login"] = f"{host}login.jsp"
@@ -69,8 +70,17 @@ class AppCfg:
                     f"{host}secure/views/bulkedit/BulkEdit1!default.jspa?reset=true&tempMax=30"
                 )
                 return cfg
-        except:
-            return {}
+        except FileNotFoundError as e:
+            with open(cfgFile, "w+", -1, "utf-8-sig") as f:
+                sample = {
+                    "user": "xx",
+                    "pwd": "xx",
+                    "host": "http://xx/",
+                    "interval": 1200,
+                }
+                json.dump(sample, f)
+            logging.error(f"cfg_err,update cfg:{cfgFile}")
+            raise (Exception("cfg_err"))
 
 
 ##状态枚举
@@ -88,7 +98,8 @@ class MyJira:
     __isLogin: JiraState = JiraState.LOGIN_NEED
     session2 = HTMLSession()
     __sessionLoop: asyncio.AbstractEventLoop = None  # 多线程登录时不卡ui
-    cfg: dict[str, str] = AppCfg.cfg_json()
+    cfg: dict[str, str] = {}
+    list_interval: int = None
     __head = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0",
         "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
@@ -96,11 +107,15 @@ class MyJira:
         "upgrade-insecure-requests": "1",
     }
 
+    def __init__(self) -> None:
+        self.cfg = AppCfg.cfg_json()
+
     ##
     def login(self):
         self.__isLogin = JiraState.LOGIN_WAIT
         cfg = self.cfg
         uName: str = cfg["user"]
+        self.list_interval = cfg["interval"]
         data = {"os_username": uName, "os_password": cfg["pwd"]}
         data["os_destination"] = ""
         data["user_role"] = ""
@@ -159,7 +174,7 @@ class MyJira:
             r = self.get_list()
             logging.debug("LIST=%s", r)
             if r is not None and len(r) >= 0:
-                return (r, 120000)
+                return (r, self.list_interval)
             else:
                 # 确认最新状态
                 return self.jira()
@@ -303,8 +318,7 @@ if __name__ == "__main__":
     logging.basicConfig(
         format="%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s",
         level=logging.INFO,
-        filename="jira.log",
+        filename="./jira.log",
         filemode="w",
     )
-
     main_win()

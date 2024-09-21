@@ -23,13 +23,13 @@ py -m flog -fxe event.txt
     sig_hand()
     if len(sys.argv) > 1:
         if sys.argv[1] == "-line":
-            d_line_cmd()
+            d_line_cmd(sys.argv)
         elif sys.argv[1] == "-fxa":
             fight_a.AnalyseFALog.analyse(sys.argv)
         elif sys.argv[1] == "-fxe":
             event.Event.analyse(sys.argv)
         else:
-            find.Find().find()
+            find.Find().find(sys.argv)
     else:
         print(help)
 

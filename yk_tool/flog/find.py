@@ -4,7 +4,7 @@
 # Auther:zhengzhichun [zheng6655@163.com]
 # Date: 2024-09-19
 # decription: 检查日志
-import sys, os
+import os
 from . import progress as p
 
 
@@ -16,14 +16,14 @@ class Find:
     rowNum4Page = 20  # 每页显示条数
     page = []  # 当前页内容
 
-    def find(self):
+    def find(self, argv: list[str]):
         import glob, time
 
-        files = glob.glob(sys.argv[1])
-        startStr = sys.argv[2]
-        endStr = sys.argv[3]
-        print(sys.argv[1], startStr, endStr, files)
-        c, row = os.get_terminal_size()
+        files = glob.glob(argv[1])
+        startStr = argv[2]
+        endStr = argv[3]
+        print(argv[1], startStr, endStr, files)
+        _c, row = os.get_terminal_size()
         self.rowNum4Page = row - 4
         # 整理出结果[(sortField,findStr，file,lineNum,sPos,len1)]
         pro = p.Progress()

@@ -2,11 +2,10 @@ from . import *
 
 
 # 显示行
-def d_line_cmd():
-    import sys
+def d_line_cmd(argv: list[str]):
 
-    file = sys.argv[2]
-    lineNumArg = int(sys.argv[3])
+    file = argv[2]
+    lineNumArg = int(argv[3])
     with open(file, "r", -1, "utf8") as fPtr:
         lineNum = 0
         while fPtr:

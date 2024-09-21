@@ -6,7 +6,7 @@
 # decription:
 
 import sys
-from flog import find, event, fight_a, d_line_cmd
+from . import find, event, fight_a, d_line_cmd
 
 
 def main() -> None:

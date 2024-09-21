@@ -4,7 +4,7 @@
 # Auther:zhengzhichun [zheng6655@163.com]
 # Date: 2024-09-19
 # decription: 分析event用时日志
-import flog.progress as p
+import progress as p
 
 
 class Event:

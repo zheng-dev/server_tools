@@ -4,7 +4,8 @@
 # Auther:zhengzhichun [zheng6655@163.com]
 # Date: 2024-09-19
 # decription: 检查日志
-import sys, os, flog.progress as p
+import sys, os
+from . import progress as p
 
 
 # 检查

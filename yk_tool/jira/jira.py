@@ -95,7 +95,7 @@ class JiraState(enum.Enum):
 class MyJira:
     _instance_lock = threading.Lock()
     oldJira: list[str] = []
-    __isLogin: JiraState = JiraState.LOGIN_NEED
+    __isLogin: JiraState = None
     session2 = HTMLSession()
     __sessionLoop: asyncio.AbstractEventLoop = None  # 多线程登录时不卡ui
     cfg: dict[str, str] = {}
@@ -108,6 +108,7 @@ class MyJira:
     }
 
     def __init__(self) -> None:
+        self.__isLogin = JiraState.LOGIN_NEED
         self.cfg = AppCfg.cfg_json()
 
     ##

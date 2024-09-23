@@ -1,6 +1,25 @@
-(chromium-browser)[https://registry.npmmirror.com/binary.html?path=chromium-browser-snapshots/Win_x64/1348689/]
 
+
+死神清、回档(win下中间件操作)
+----------------------------
+1. 构建数据(14:55,15:00,15:10,16:09),快照时间把`{any,2}`改为`{any,16}`
+2. 回档到15点
+   1. unity下线-->中间件停逻辑服-->回档全表到15:00-->重启erl-->unity登录确认(等级、任务正确);db下表目录正常
+3. 清档
+   1. unity下线-->中间件停逻辑服-->中间件切到$root-->清档选表-->重启erl-->unity登录确认(新号);db下表目录正常
+4. 清档再回档
+   1. 处理上面第3步-->确认是新号-->处理上面第2步-->unity登录确认老号数据是15:00的,db下目录正常(当前目录和快照目录)
+
+snk清、回档(win下中间件操作)
+---------------------------
+
+
+
+chromium下载
+------------
+(chromium-browser)[https://registry.npmmirror.com/binary.html?path=chromium-browser-snapshots/Win_x64/1348689/]
 chromium_downloader.py下找到
+
 ```python
 chromiumExecutable = {
     'linux': DOWNLOADS_FOLDER / REVISION / 'chrome-linux' / 'chrome',
@@ -16,4 +35,45 @@ chromiumExecutable = {
 # 打印这两个变量可以知道执行的驱动具体位置,把chromium-browser目录(zip解决后)复制过来
 # print(DOWNLOADS_FOLDER)
 # print(REVISION)
+```
+
+```python
+
+## 确认插件是否需要新装
+def ensure_chromium():
+    # import os, pathlib
+
+    # from pyppeteer import __chromium_revision__, __pyppeteer_home__
+
+    # DOWNLOADS_FOLDER = pathlib.Path(__pyppeteer_home__) / "local-chromium"
+
+    # REVISION = os.environ.get("PYPPETEER_CHROMIUM_REVISION", __chromium_revision__)
+    # file: str = f"{DOWNLOADS_FOLDER}/{REVISION}"
+    # logging.info("chromium %s", file)
+    # if not os.path.exists(f"{file}/chrome-win"):
+    #     try:
+    #         os.makedirs(file)
+    #     except:
+    #         pass
+    #     os.chdir(file)
+
+    #     import urllib.request, zipfile
+
+    #     zipName: str = "chrome-win.zip"
+    #     try:
+    #         with zipfile.ZipFile(zipName, "r") as zf:
+    #             print("start unzip")
+    #             zf.extractall()
+    #     except:
+    #         # 镜像下载地址
+    #         chromeZip: str = (
+    #             "https://registry.npmmirror.com/-/binary/chromium-browser-snapshots/Win_x64/1348689/chrome-win.zip"
+    #         )
+    #         print("start download. please wait...")
+    #         urllib.request.urlretrieve(chromeZip, zipName)
+    #         print("start unzip")
+    #         with zipfile.ZipFile(zipName, "r") as zf:
+    #             zf.extractall()
+    #     print("chrome ok==")
+    pass
 ```

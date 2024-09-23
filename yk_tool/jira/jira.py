@@ -4,46 +4,30 @@
 # Auther:zhengzhichun [zheng6655@163.com]
 # Date: 2024-08-29
 # decription:监听指定jira中的帐号是不是分配了新的jira
-from requests import Response
-from requests_html import HTMLSession
+
 import threading, time, logging, webbrowser
 import enum, asyncio
 
+## 因为import时__init__需要用到下面的设置信息,所以要在最开始处运行
+if __name__ == "__main__":
+    # 这里配置log必需在脚本最前面
+    logging.basicConfig(
+        format="%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s",
+        level=logging.INFO,
+        filename="./.jira.log",
+        filemode="w",
+    )
+    #
+    import os
 
-## 确认插件是否需要新装
-def ensure_chromium():
-    import os, pathlib
-    from pyppeteer import __chromium_revision__, __pyppeteer_home__
+    os.environ.setdefault("PYPPETEER_CHROMIUM_REVISION", "1348689")  # 设置下载变量
+    os.environ.setdefault(
+        "PYPPETEER_DOWNLOAD_HOST", "https://registry.npmmirror.com/-/binary"
+    )  # 设置下载变量
 
-    DOWNLOADS_FOLDER = pathlib.Path(__pyppeteer_home__) / "local-chromium"
-    REVISION = os.environ.get("PYPPETEER_CHROMIUM_REVISION", __chromium_revision__)
-    file: str = f"{DOWNLOADS_FOLDER}/{REVISION}"
-    logging.info("chromium %s", file)
-    if not os.path.exists(f"{file}/chrome-win"):
-        try:
-            os.makedirs(file)
-        except:
-            pass
-        os.chdir(file)
 
-        import urllib.request, zipfile
-
-        zipName: str = "chrome-win.zip"
-        try:
-            with zipfile.ZipFile(zipName, "r") as zf:
-                print("start unzip")
-                zf.extractall()
-        except:
-            # 镜像下载地址
-            chromeZip: str = (
-                "https://registry.npmmirror.com/-/binary/chromium-browser-snapshots/Win_x64/1348689/chrome-win.zip"
-            )
-            print("start download. please wait...")
-            urllib.request.urlretrieve(chromeZip, zipName)
-            print("start unzip")
-            with zipfile.ZipFile(zipName, "r") as zf:
-                zf.extractall()
-        print("chrome ok==")
+from requests import Response
+from requests_html import HTMLSession
 
 
 ##字典cfg
@@ -98,7 +82,7 @@ class MyJira:
     __isLogin: JiraState = None
     session2 = HTMLSession()
     __sessionLoop: asyncio.AbstractEventLoop = None  # 多线程登录时不卡ui
-    cfg: dict[str, str] = {}
+    # cfg: dict[str, str] = {}
     list_interval: int = None
     __head = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0",
@@ -109,7 +93,7 @@ class MyJira:
 
     def __init__(self) -> None:
         self.__isLogin = JiraState.LOGIN_NEED
-        self.cfg = AppCfg.cfg_json()
+        self.cfg: dict[str, str] = AppCfg.cfg_json()
 
     ##
     def login(self):
@@ -138,14 +122,12 @@ class MyJira:
                 self.__isLogin = JiraState.LOGIN_OK
 
     ##
-    def async_login(self):
+    def async_login(self) -> None:
         def l(a: MyJira):
             asyncio.set_event_loop(a.__sessionLoop)
             a.login()
-            pass
 
         threading.Thread(target=l, args=(self,), name="tt").start()
-        pass
 
     ##
     def get_list(self) -> None | list[str]:
@@ -213,7 +195,6 @@ class MyJira:
             with MyJira._instance_lock:
                 if not hasattr(MyJira, "_instance"):
                     MyJira._instance = object.__new__(cls)
-                    ensure_chromium()
                     cls._instance.session2.browser  # 把loop先在主线程开出来
                     cls._instance.__sessionLoop = asyncio.get_event_loop()  # 子线程set
 
@@ -226,7 +207,7 @@ class MyJira:
 
 
 ##
-def main_win():
+def main():
     import tkinter
 
     logging.info("main_win")
@@ -314,12 +295,5 @@ class BindKey:
         keyboard.hook(self.__on_key)  # 锁屏回来也生效
 
 
-##
 if __name__ == "__main__":
-    logging.basicConfig(
-        format="%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s",
-        level=logging.INFO,
-        filename="./jira.log",
-        filemode="w",
-    )
-    main_win()
+    main()

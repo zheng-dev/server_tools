@@ -45,6 +45,8 @@ class AppCfg:
             with open(cfgFile, "r+", -1, "utf-8-sig") as f:
                 cfg = json.load(f)
                 host = cfg["host"]
+                if host == "http://xx/":
+                    raise (FileNotFoundError("host_err"))
                 cfg["login"] = f"{host}login.jsp"
                 # 登录后的必要请求
                 cfg["after_login"] = [f"{host}issues/?filter=-1"]
@@ -78,22 +80,36 @@ class JiraState(enum.Enum):
 ## 检查jira
 class MyJira:
     _instance_lock = threading.Lock()
-    oldJira: list[str] = []
-    __isLogin: JiraState = None
-    session2 = HTMLSession()
-    __sessionLoop: asyncio.AbstractEventLoop = None  # 多线程登录时不卡ui
-    # cfg: dict[str, str] = {}
-    list_interval: int = None
-    __head = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0",
-        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
-        "Cache-Control": "max-age=0",
-        "upgrade-insecure-requests": "1",
-    }
+
+    ##单例用
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(MyJira, "_instance"):
+            with MyJira._instance_lock:
+                if not hasattr(MyJira, "_instance"):
+                    MyJira._instance = object.__new__(cls)
+        return MyJira._instance
 
     def __init__(self) -> None:
-        self.__isLogin = JiraState.LOGIN_NEED
+        self.session2 = HTMLSession()
+        # 把loop先在主线程开出来,多线程登录--不卡ui
+        self.session2.browser
+        self.__sessionLoop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
+
         self.cfg: dict[str, str] = AppCfg.cfg_json()
+        self.oldJira: list[str] = []
+        self.list_interval: int = None
+        self.__isLogin = JiraState.LOGIN_NEED
+        self.__head = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0",
+            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+            "Cache-Control": "max-age=0",
+            "upgrade-insecure-requests": "1",
+        }
+
+    ##
+    def __del__(self):
+        logging.info("jire __del__")
+        self.session2.close()
 
     ##
     def login(self):
@@ -188,22 +204,6 @@ class MyJira:
         with open("t.htm", "w+", encoding="utf-8") as f:
             f.write(html)
             webbrowser.open("t.htm")
-
-    ##单例用
-    def __new__(cls, *args, **kwargs):
-        if not hasattr(MyJira, "_instance"):
-            with MyJira._instance_lock:
-                if not hasattr(MyJira, "_instance"):
-                    MyJira._instance = object.__new__(cls)
-                    cls._instance.session2.browser  # 把loop先在主线程开出来
-                    cls._instance.__sessionLoop = asyncio.get_event_loop()  # 子线程set
-
-        return MyJira._instance
-
-    ##
-    def __del__(self):
-        logging.info("jire __del__")
-        self.session2.close()
 
 
 ##

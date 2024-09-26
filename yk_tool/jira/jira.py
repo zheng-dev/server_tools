@@ -82,11 +82,12 @@ class MyJira:
     _instance_lock = threading.Lock()
 
     ##单例用
-    def __new__(cls, *args, **kwargs):
+    def single():
+        # __new__会在return后一定调用__init__运行多次
         if not hasattr(MyJira, "_instance"):
             with MyJira._instance_lock:
                 if not hasattr(MyJira, "_instance"):
-                    MyJira._instance = object.__new__(cls)
+                    MyJira._instance = MyJira()
         return MyJira._instance
 
     def __init__(self) -> None:
@@ -211,7 +212,7 @@ def main():
     import tkinter
 
     logging.info("main_win")
-    jira = MyJira()  # __new__时会创出event_loop
+    jira = MyJira.single()  # 时会创出event_loop
     jira.async_login()
 
     root = tkinter.Tk()

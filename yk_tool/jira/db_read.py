@@ -41,26 +41,48 @@ class BinFile:
 
     def get_row(self) -> str:
         """取出N条数据\n已经格式化成str\n多条以换行分隔"""
-        # bin格式: 本条len+byte内容
+        # TODO 定长文件格式为：[2字节键长+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
+        # TODO 变长文件格式为：[4字节块长+2字节键长（0表示空块）+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
+        # steam文件格式为：[4字节块长+2字节键长（0表示空块）+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
         termStr = ""
+        self.fileHand.seek(0)
         while True:
             b = self.fileHand.read(4)
             if len(b) != 4:
                 break
-            logging.debug(f"bnum:{b}")
-            (RowBNum,) = struct.unpack(b">I", b)
-            bContext = self.fileHand.read(RowBNum)
+            kl = self.fileHand.read(2)
+            (block_size,) = struct.unpack(b">I", b)
+            (key_len_num,) = struct.unpack(b">H", kl)
+
+            if key_len_num == 0:
+                # 空块,加位移
+                break
+            k_txt = self.fileHand.read(key_len_num)
+            logging.debug(f"bnum:{b},k-len:{kl},k:{k_txt}")
+            print("key=", binary_to_term(k_txt))
+
+            (vsn,) = struct.unpack(b">I", self.fileHand.read(4))
+            _ = self.fileHand.read(6)
+
+            dl: bytes = self.fileHand.read(4)
+            # (val_len,) = struct.unpack(b">I", dl)
+            val_len = block_size - key_len_num - 20
+            print(val_len, struct.unpack(b">I", dl), dl, key_len_num, vsn)
+
+            bContext = self.fileHand.read(val_len)
 
             if len(bContext) > 0:
                 try:
                     r = binary_to_term(bContext)
                     termStr += str(r) + "\n"
                 except:
-                    logging.error(f"bin err:{bContext}")
+                    logging.error(f"bin_err:{bContext}")
                     termStr += "\nbin_err"
             else:
                 termStr += "\nno data"
                 break
+            print("end", termStr)
+            break
         self.hash = hash(termStr)
         return termStr
 

@@ -36,6 +36,7 @@ class BinFile:
     def open(self, file: str):
         if len(self.fileName) > 0 and self.fileName != file:
             self.fileHand.close()
+        self.fileName = file
         self.fileHand = open(file, "rb+")
         return self
 
@@ -43,46 +44,54 @@ class BinFile:
         """取出N条数据\n已经格式化成str\n多条以换行分隔"""
         # TODO 定长文件格式为：[2字节键长+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
         # TODO 变长文件格式为：[4字节块长+2字节键长（0表示空块）+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
-        # steam文件格式为：[4字节块长+2字节键长（0表示空块）+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
+        # steam文件格式为：[4字节块长+2字节键长（0表示空块）+2(血源)+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
         termStr = ""
         self.fileHand.seek(0)
+        row_num = 0  # 行计数
         while True:
             b = self.fileHand.read(4)
             if len(b) != 4:
                 break
             kl = self.fileHand.read(2)
-            (block_size,) = struct.unpack(b">I", b)
+            # (block_size,) = struct.unpack(b">I", b)
             (key_len_num,) = struct.unpack(b">H", kl)
-
+            row_num += 1
             if key_len_num == 0:
                 # 空块,加位移
                 break
             k_txt = self.fileHand.read(key_len_num)
             logging.debug(f"bnum:{b},k-len:{kl},k:{k_txt}")
-            print("key=", binary_to_term(k_txt))
+            key = binary_to_term(k_txt)
+            (
+                src,
+                vsn,
+            ) = struct.unpack(b">HI", self.fileHand.read(6))
+            (t1,) = struct.unpack(b">Q", bytes([0, 0]) + self.fileHand.read(6))
+            (val_len,) = struct.unpack(b">I", self.fileHand.read(4))
 
-            (vsn,) = struct.unpack(b">I", self.fileHand.read(4))
-            _ = self.fileHand.read(6)
-
-            dl: bytes = self.fileHand.read(4)
-            # (val_len,) = struct.unpack(b">I", dl)
-            val_len = block_size - key_len_num - 20
-            print(val_len, struct.unpack(b">I", dl), dl, key_len_num, vsn)
+            print(val_len, key_len_num, vsn, t1)
 
             bContext = self.fileHand.read(val_len)
 
             if len(bContext) > 0:
                 try:
                     r = binary_to_term(bContext)
-                    termStr += str(r) + "\n"
+                    ext_info: dict = {
+                        "row_num": row_num,
+                        "vsn": vsn,
+                        "src": src,
+                        "time": t1,
+                        "key": key,
+                        "key_bin": k_txt,
+                    }
+                    termStr += str(r) + "---" + str(ext_info) + "\n"
                 except:
                     logging.error(f"bin_err:{bContext}")
                     termStr += "\nbin_err"
             else:
                 termStr += "\nno data"
                 break
-            print("end", termStr)
-            break
+
         self.hash = hash(termStr)
         return termStr
 
@@ -144,9 +153,9 @@ def main():
     # 选表
     def fOTab():
         nonlocal dbPath, binPath, binFile
-        if len(dbPath) == 0:
-            t_box.showinfo("err", "请先选择db目录")
-            return
+        # if len(dbPath) == 0:
+        #     t_box.showinfo("err", "请先选择db目录")
+        #     return
         selBinPath: str = askopenfilename(title="选择表bin文件", initialdir=dbPath)
         if len(selBinPath) == 0:
             t_box.showinfo("err", "必需选择db增量bin")
@@ -179,7 +188,7 @@ def main():
             logging.error(f"save_err:{e}")
             t_box.showinfo("err", "保存失败")
 
-    tkinter.Button(top, text="保存表bin", command=fSBin).pack(side="left", padx=10)
+    tkinter.Button(top, text="表存kv", command=fSBin).pack(side="left", padx=10)
     top.pack(anchor="w")
 
     labTabBin.pack(side="top", anchor="w")

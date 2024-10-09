@@ -15,7 +15,7 @@ if __name__ == "__main__":
     # 这里配置log必需在脚本最前面
     logging.basicConfig(
         format="%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s",
-        level=logging.DEBUG,
+        level=logging.INFO,
         filename=".db_read.log",
         filemode="w",
     )
@@ -45,7 +45,7 @@ class BinFile:
         """取出N条数据\n已经格式化成str\n多条以换行分隔"""
         # TODO 定长文件格式为：[2字节键长+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
         # TODO 变长文件格式为：[4字节块长+2字节键长（0表示空块）+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
-        # steam文件格式为：[4字节块长+2字节键长（0表示空块）+2字节血源+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
+        # steam文件格式为：[4字节块长+2字节键长（0表示空块）+键数据+2字节血源+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
         termStr = ""
         self.fileHand.seek(0)
         row_num = 0  # 行计数
@@ -70,7 +70,7 @@ class BinFile:
             (t1,) = struct.unpack(b">Q", bytes([0, 0]) + self.fileHand.read(6))
             (val_len,) = struct.unpack(b">I", self.fileHand.read(4))
 
-            print(val_len, key_len_num, vsn, t1)
+            # print(val_len, key_len_num, vsn, t1)
 
             bContext = self.fileHand.read(val_len)
 
@@ -98,20 +98,21 @@ class BinFile:
 
     def save_rows(self, appendFile: str, key: bytes, val: bytes, src: int = 1001):
         """追加块到文件"""
-        # steam文件格式为：[4字节块长+2字节键长（0表示空块）+2字节血源+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
+        # steam文件格式为：[4字节块长+2字节键长（0表示空块）+键数据+2字节血源+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
         vsize = len(val)
         ksize = len(key)
         blockSize = 22 - 4 + vsize + ksize  # 去掉4字节块长
         time = struct.pack(b">Q", 0)
-        r = struct.pack(b">IHH", blockSize, ksize, src) + key
-        r += struct.pack(b">I", 1)
+        r = struct.pack(b">IH", blockSize, ksize) + key
+        r += struct.pack(b">IH", src, 1)
         r += time[2:]  # 8byte变6
         r += struct.pack(b">I", vsize) + val
-
+        print("ok=22===")
         with open(appendFile, "rb+") as f:
             f.seek(0, 2)
-            self.fileHand.write(r)
-            self.fileHand.flush()
+            f.write(r)
+            print("ok====", f.tell())
+            f.flush()
 
     def do_close(self):
         if self.fileHand is not None:

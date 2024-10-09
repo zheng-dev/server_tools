@@ -5,6 +5,7 @@
 # Date: 2024-09-29
 # decription: db增量bin的读、增
 
+import tkinter.scrolledtext
 from erlang import *
 import logging, struct
 from tkinter.filedialog import *
@@ -44,7 +45,7 @@ class BinFile:
         """取出N条数据\n已经格式化成str\n多条以换行分隔"""
         # TODO 定长文件格式为：[2字节键长+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
         # TODO 变长文件格式为：[4字节块长+2字节键长（0表示空块）+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
-        # steam文件格式为：[4字节块长+2字节键长（0表示空块）+2(血源)+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
+        # steam文件格式为：[4字节块长+2字节键长（0表示空块）+2字节血源+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
         termStr = ""
         self.fileHand.seek(0)
         row_num = 0  # 行计数
@@ -95,21 +96,22 @@ class BinFile:
         self.hash = hash(termStr)
         return termStr
 
-    def save_rows(self, txt: str):
-        """保存修改后的内容"""
-        r = b""
-        for row in txt.strip().split("\n"):
-            logging.debug(row)
-            # 只有eval可以创建对象
-            # TODO 对row作检查
-            str_check(row)
-            any = eval(row)
-            r1 = term_to_binary(any)
-            numB = struct.pack(b">I", len(r1))
-            r += numB + r1
-        self.fileHand.seek(0)
-        self.fileHand.write(r)
-        self.fileHand.flush()
+    def save_rows(self, appendFile: str, key: bytes, val: bytes, src: int = 1001):
+        """追加块到文件"""
+        # steam文件格式为：[4字节块长+2字节键长（0表示空块）+2字节血源+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
+        vsize = len(val)
+        ksize = len(key)
+        blockSize = 22 - 4 + vsize + ksize  # 去掉4字节块长
+        time = struct.pack(b">Q", 0)
+        r = struct.pack(b">IHH", blockSize, ksize, src) + key
+        r += struct.pack(b">I", 1)
+        r += time[2:]  # 8byte变6
+        r += struct.pack(b">I", vsize) + val
+
+        with open(appendFile, "rb+") as f:
+            f.seek(0, 2)
+            self.fileHand.write(r)
+            self.fileHand.flush()
 
     def do_close(self):
         if self.fileHand is not None:
@@ -126,8 +128,16 @@ def str_check(str1: str):
 ##
 def main():
     import tkinter, tkinter.messagebox as t_box
+    from tkinter import scrolledtext
 
     logging.info("main start")
+
+    dbPath: str = ""
+    binPath: str = ""
+    binFile = BinFile()
+    dis: bool = False
+
+    # 界面
     root = tkinter.Tk()
     root.title("yk db表数据")  # #窗口标题
     root.geometry("600x490+900+110")  # #窗口位置500后面是字母x
@@ -135,11 +145,48 @@ def main():
 
     top = tkinter.Frame(root, width=250, height=30)
     labTabBin = tkinter.Label(root, text="未选择表增量bin文件")
-    txtCont = tkinter.Text(root, width=80, height=30)
+    # 保存表kv
+    add_fram = tkinter.Frame(root, width=250, height=30)
+    val_key = scrolledtext.ScrolledText(add_fram, width=80, height=1)
+    val_text = scrolledtext.ScrolledText(add_fram, width=80, height=5)
 
-    dbPath: str = ""
-    binPath: str = ""
-    binFile = BinFile()
+    # 追加kv到表的最新bin文件中
+    def save():
+        nonlocal dis, binFile
+        import os
+
+        tab: str = os.path.dirname(os.path.dirname(os.path.abspath(binFile.fileName)))
+        try:
+            os.chdir(tab)
+            dirl = os.listdir(".")
+            dirl.sort()
+            dirl.reverse()
+            os.chdir(dirl[0])
+            fileL = os.listdir(".")
+            fileL.sort()
+            fileL.reverse()
+            appendFile: str = fileL[0]  # 在最新的文件追加
+
+            key: str = val_key.get(1.0, tkinter.END)
+            val: str = val_text.get(1.0, tkinter.END)
+            keyBin = term_to_binary(eval(key))
+            valBin = term_to_binary(eval(val))
+            binFile.save_rows(appendFile, keyBin, valBin)
+
+            t_box.showinfo("sucess", "操作成功")
+            print(tab, fileL[0], key, keyBin, valBin)
+        finally:
+            os.chdir(os.path.dirname(os.path.abspath(binFile.fileName)))
+        dis = False
+        val_key.delete(1.0, tkinter.END)
+        val_text.delete(1.0, tkinter.END)
+        add_fram.pack_forget()
+
+    tkinter.Button(add_fram, text="追加kv到表", command=save).pack()
+    val_key.pack()
+    val_text.pack()
+
+    txtCont = scrolledtext.ScrolledText(root, width=80, height=30)
 
     # 选库
     def fODb():
@@ -170,35 +217,27 @@ def main():
 
     tkinter.Button(top, text="表文件", command=fOTab).pack(side="left")
 
-    # 保存表数据
-    def fSBin():
-        nonlocal binFile, txtCont
-        if binFile.fileHand is None:
-            t_box.showinfo("err", "必需选择db增量bin")
-            return
-        try:
-            txt = txtCont.get(1.0, tkinter.END)
-            h = hash(txt[:-1])  # 在insert到text时被系统加了\n
-            if binFile.hash != h:  # 检查有修改
-                binFile.save_rows(txt)
-                t_box.showinfo("ok", "保存成功")
-            else:
-                t_box.showinfo("err", "没有内容修改")
-        except Exception as e:
-            logging.error(f"save_err:{e}")
-            t_box.showinfo("err", "保存失败")
+    # 显示保存界面
+    def disp_save():
+        nonlocal dis
+        if not dis:
+            dis = True
+            val_key.insert(1.0, "放入key串")
+            val_text.insert(1.0, "放入value串")
+            add_fram.pack(after=labTabBin)
 
-    tkinter.Button(top, text="表存kv", command=fSBin).pack(side="left", padx=10)
+    tkinter.Button(top, text="表存kv", command=disp_save).pack(side="left", padx=10)
     top.pack(anchor="w")
 
     labTabBin.pack(side="top", anchor="w")
+
     # bin显示
     txtCont.insert(1.0, "选择db-->选择表-->打开增量bin文件")
     txtCont.pack(side=tkinter.LEFT)
-    yscrollbar = tkinter.Scrollbar(root)
-    yscrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
-    yscrollbar.config(command=txtCont.yview)
-    txtCont.config(yscrollcommand=yscrollbar.set)
+    # yscrollbar = tkinter.Scrollbar(root)
+    # yscrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
+    # yscrollbar.config(command=txtCont.yview)
+    # txtCont.config(yscrollcommand=yscrollbar.set)
 
     root.mainloop()
     # tk主窗关闭后

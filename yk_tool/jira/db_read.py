@@ -5,10 +5,10 @@
 # Date: 2024-09-29
 # decription: db增量bin的读、增
 
-import tkinter.scrolledtext
 from erlang import *
-import logging, struct
 from tkinter.filedialog import *
+import logging, struct
+from datetime import *
 
 
 if __name__ == "__main__":
@@ -77,12 +77,13 @@ class BinFile:
             if len(bContext) > 0:
                 try:
                     r = binary_to_term(bContext)
+                    t = datetime.fromtimestamp(t1 // 1000)
                     ext_info: dict = {
                         "key": key,
                         "val": str(r),
                         "vsn": vsn,
                         "src": src,
-                        "time": t1,
+                        "time": str(t) + str(t1 % 1000),
                         "row_num": row_num,
                     }
                     termStr += str(ext_info) + "\n\n"
@@ -124,6 +125,13 @@ def str_check(str1: str):
             raise (Exception("txt_illegal"))
 
 
+def parse(str1: str):
+    # 避免os的引入
+    #   File "<string>", line 1, in <module>
+    #    NameError: name 'os' is not defined. Did you forget to import 'os'
+    term_to_binary(eval(str1))
+
+
 ##
 def main():
     import tkinter, tkinter.messagebox as t_box
@@ -154,6 +162,13 @@ def main():
         nonlocal dis, binFile
         import os
 
+        key: str = val_key.get(1.0, tkinter.END)
+        val: str = val_text.get(1.0, tkinter.END)
+        if "放入key串\n" == key or "放入value串\n" == val:
+            return
+        str_check(key)
+        str_check(val)
+
         tab: str = os.path.dirname(os.path.dirname(os.path.abspath(binFile.fileName)))
         try:
             os.chdir(tab)
@@ -166,10 +181,8 @@ def main():
             fileL.reverse()
             appendFile: str = fileL[0]  # 在最新的文件追加
 
-            key: str = val_key.get(1.0, tkinter.END)
-            val: str = val_text.get(1.0, tkinter.END)
-            keyBin = term_to_binary(eval(key))
-            valBin = term_to_binary(eval(val))
+            keyBin = parse(key)
+            valBin = parse(val)
             binFile.save_rows(appendFile, keyBin, valBin)
 
             t_box.showinfo("sucess", "操作成功")
@@ -213,10 +226,18 @@ def main():
         txtCont.config()
         txtCont.delete(1.0, tkinter.END)
         txtCont.insert(1.0, termStr)
-        highlight_word("val", "highlight", "blue")
-        highlight_word("key", "highlight1", "blue")
+        highlight_word("val", "highlight", "red")
+        highlight_word("key", "highlight1", "red")
         highlight_word("vsn", "highlight2", "red")
         highlight_word("row_num", "highlight3", "red")
+
+        highlight_word("Atom", "highlight11", "blue")
+        highlight_word("Binary", "highlight12", "blue")
+        highlight_word("List", "highlight13", "blue")
+        highlight_word("Pid", "highlight14", "blue")
+        highlight_word("Port", "highlight15", "blue")
+        highlight_word("Reference", "highlight16", "blue")
+        highlight_word("Function", "highlight17", "blue")
 
     tkinter.Button(top, text="表文件", command=fOTab).pack(side="left")
 

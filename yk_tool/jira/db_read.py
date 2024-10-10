@@ -135,7 +135,6 @@ def main():
     binPath: str = ""
     binFile = BinFile()
     dis: bool = False
-    char_width = 7  # 假设每个字符的大约宽度，这取决于使用的字体和大小
 
     # 界面
     root = tkinter.Tk()
@@ -185,17 +184,8 @@ def main():
     tkinter.Button(add_fram, text="追加kv到表", command=save).pack()
     val_key.pack()
     val_text.pack()
-
+    # width，如果你设置width=50，那么意味着ScrolledText组件的宽度大约可以容纳50个字符。这些字符是指在组件的默认字体和字号下的“0”这样的标准字符。因此，实际的像素宽度将取决于所使用的字体和屏幕的显示设置
     txtCont = scrolledtext.ScrolledText(root, width=80, height=30)
-
-    def resize_scrolled_text(event):
-        # 计算宽度
-        new_width = int(event.width / char_width)
-        txtCont.config(width=new_width)
-        print(event.width)
-
-    # 当窗口大小改变时，更新ScrolledText的宽度
-    root.bind("<Configure>", resize_scrolled_text)
 
     # 选库
     def fODb():
@@ -242,11 +232,8 @@ def main():
 
     # bin显示
     txtCont.insert(1.0, "选择db-->选择表-->打开增量bin文件")
-    txtCont.pack(side=tkinter.LEFT)
-    # yscrollbar = tkinter.Scrollbar(root)
-    # yscrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
-    # yscrollbar.config(command=txtCont.yview)
-    # txtCont.config(yscrollcommand=yscrollbar.set)
+    # 全屏填充
+    txtCont.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
 
     root.mainloop()
     # tk主窗关闭后

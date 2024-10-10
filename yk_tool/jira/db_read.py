@@ -213,6 +213,10 @@ def main():
         txtCont.config()
         txtCont.delete(1.0, tkinter.END)
         txtCont.insert(1.0, termStr)
+        highlight_word("val", "highlight", "blue")
+        highlight_word("key", "highlight1", "blue")
+        highlight_word("vsn", "highlight2", "red")
+        highlight_word("row_num", "highlight3", "red")
 
     tkinter.Button(top, text="表文件", command=fOTab).pack(side="left")
 
@@ -234,6 +238,25 @@ def main():
     txtCont.insert(1.0, "选择db-->选择表-->打开增量bin文件")
     # 全屏填充
     txtCont.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
+
+    # 定义一个函数来着色指定的单词
+    def highlight_word(word, tag, color):
+        # txtCont.tag_remove(tag, "1.0", tkinter.END)
+        start_index = "1.0"
+        while True:
+            # 寻找单词的起始位置
+            start_index = txtCont.search(word, start_index, tkinter.END)
+            if not start_index:
+                break
+            # 通过计算单词长度确定结束位置
+            end_index = txtCont.index(f"{start_index}+{len(word)}c")
+            # 添加标记
+            txtCont.tag_add(tag, start_index, end_index)
+            # 设置标记的属性来改变颜色
+            txtCont.tag_config(tag, foreground=color)
+            # 移动到文本的下一个部分
+            start_index = end_index
+        txtCont.tag_raise("sel")  # 使选择突出显示始终位于顶部
 
     root.mainloop()
     # tk主窗关闭后

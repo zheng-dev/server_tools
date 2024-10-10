@@ -78,14 +78,14 @@ class BinFile:
                 try:
                     r = binary_to_term(bContext)
                     ext_info: dict = {
-                        "row_num": row_num,
+                        "key": key,
+                        "val": str(r),
                         "vsn": vsn,
                         "src": src,
                         "time": t1,
-                        "key": key,
-                        "key_bin": k_txt,
+                        "row_num": row_num,
                     }
-                    termStr += str(r) + "---" + str(ext_info) + "\n"
+                    termStr += str(ext_info) + "\n\n"
                 except:
                     logging.error(f"bin_err:{bContext}")
                     termStr += "\nbin_err"
@@ -107,11 +107,9 @@ class BinFile:
         r += struct.pack(b">IH", src, 1)
         r += time[2:]  # 8byte变6
         r += struct.pack(b">I", vsize) + val
-        print("ok=22===")
         with open(appendFile, "rb+") as f:
-            f.seek(0, 2)
+            f.seek(0, 2)  # 跳到文件末尾
             f.write(r)
-            print("ok====", f.tell())
             f.flush()
 
     def do_close(self):
@@ -137,6 +135,7 @@ def main():
     binPath: str = ""
     binFile = BinFile()
     dis: bool = False
+    char_width = 7  # 假设每个字符的大约宽度，这取决于使用的字体和大小
 
     # 界面
     root = tkinter.Tk()
@@ -188,6 +187,15 @@ def main():
     val_text.pack()
 
     txtCont = scrolledtext.ScrolledText(root, width=80, height=30)
+
+    def resize_scrolled_text(event):
+        # 计算宽度
+        new_width = int(event.width / char_width)
+        txtCont.config(width=new_width)
+        print(event.width)
+
+    # 当窗口大小改变时，更新ScrolledText的宽度
+    root.bind("<Configure>", resize_scrolled_text)
 
     # 选库
     def fODb():

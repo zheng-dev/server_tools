@@ -103,9 +103,10 @@ class BinFile:
         vsize = len(val)
         ksize = len(key)
         blockSize = 22 - 4 + vsize + ksize  # 去掉4字节块长
-        time = struct.pack(b">Q", 0)
+        # db加载用的时间最新的 2064-10-11 11:03:58
+        time = struct.pack(b">Q", 2990919838000)
         r = struct.pack(b">IH", blockSize, ksize) + key
-        r += struct.pack(b">IH", src, 1)
+        r += struct.pack(b">HI", src, 3)
         r += time[2:]  # 8byte变6
         r += struct.pack(b">I", vsize) + val
         with open(appendFile, "rb+") as f:
@@ -154,6 +155,7 @@ def main():
     labTabBin = tkinter.Label(root, text="未选择表增量bin文件")
     # 保存表kv
     add_fram = tkinter.Frame(root, width=250, height=30)
+    val_src = scrolledtext.ScrolledText(add_fram, width=80, height=1)
     val_key = scrolledtext.ScrolledText(add_fram, width=80, height=1)
     val_text = scrolledtext.ScrolledText(add_fram, width=80, height=5)
 
@@ -162,6 +164,7 @@ def main():
         nonlocal dis, binFile
         import os
 
+        srcInput: str = val_key.get(1.0, tkinter.END)
         key: str = val_key.get(1.0, tkinter.END)
         val: str = val_text.get(1.0, tkinter.END)
         if "放入key串\n" == key or "放入value串\n" == val:
@@ -183,7 +186,7 @@ def main():
 
             keyBin = parse(key)
             valBin = parse(val)
-            binFile.save_rows(appendFile, keyBin, valBin)
+            binFile.save_rows(appendFile, keyBin, valBin, src=int(srcInput))
 
             t_box.showinfo("sucess", "操作成功")
             print(tab, fileL[0], key, keyBin, valBin)
@@ -191,10 +194,12 @@ def main():
             os.chdir(os.path.dirname(os.path.abspath(binFile.fileName)))
         dis = False
         val_key.delete(1.0, tkinter.END)
+        val_src.delete(1.0, tkinter.END)
         val_text.delete(1.0, tkinter.END)
         add_fram.pack_forget()
 
     tkinter.Button(add_fram, text="追加kv到表", command=save).pack()
+    val_src.pack()
     val_key.pack()
     val_text.pack()
     # width，如果你设置width=50，那么意味着ScrolledText组件的宽度大约可以容纳50个字符。这些字符是指在组件的默认字体和字号下的“0”这样的标准字符。因此，实际的像素宽度将取决于所使用的字体和屏幕的显示设置
@@ -247,6 +252,7 @@ def main():
         if not dis:
             dis = True
             val_key.insert(1.0, "放入key串")
+            val_src.insert(1.0, "放入src整数")
             val_text.insert(1.0, "放入value串")
             add_fram.pack(after=labTabBin)
 

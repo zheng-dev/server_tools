@@ -129,7 +129,7 @@ def parse(str1: str):
     # 避免os的引入
     #   File "<string>", line 1, in <module>
     #    NameError: name 'os' is not defined. Did you forget to import 'os'
-    term_to_binary(eval(str1))
+    return term_to_binary(eval(str1))
 
 
 ##

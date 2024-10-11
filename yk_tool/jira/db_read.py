@@ -80,7 +80,7 @@ class BinFile:
                     t = datetime.fromtimestamp(t1 // 1000)
                     ext_info: dict = {
                         "key": key,
-                        "val": str(r),
+                        "val": r,
                         "vsn": vsn,
                         "src": src,
                         "time": str(t) + str(t1 % 1000),

@@ -210,6 +210,7 @@ class MyJira:
 ##
 def main():
     import tkinter
+    from tkinter import scrolledtext
 
     logging.info("main_win")
     jira = MyJira.single()  # 时会创出event_loop
@@ -217,15 +218,15 @@ def main():
 
     root = tkinter.Tk()
     root.title("jira")  # #窗口标题
-    root.geometry("300x190+900+110")  # #窗口位置500后面是字母x
+    root.geometry("260x210+900+110")  # #窗口位置500后面是字母x
     root.lift()
-    # root.attributes('-toppost',True)
-    l1 = tkinter.Text(root, height=20, width=38)
-    l1.pack(side=tkinter.LEFT)
-    yscrollbar = tkinter.Scrollbar(root)
-    yscrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
-    yscrollbar.config(command=l1.yview)
-    l1.config(yscrollcommand=yscrollbar.set)
+    root.resizable(False, False)
+    l1 = scrolledtext.ScrolledText(root, height=20, width=38)
+    l1.pack(side=tkinter.LEFT, fill="both", expand=True)
+    # yscrollbar = tkinter.Scrollbar(root)
+    # yscrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
+    # yscrollbar.config(command=l1.yview)
+    # l1.config(yscrollcommand=yscrollbar.set)
 
     browseUrl = jira.cfg["browse"]
 
@@ -272,9 +273,10 @@ import keyboard
 
 
 class BindKey:
-    __keys: list[str] = []
-    __onKeys: list[str] = []
-    __call = None
+    def __init__(self) -> None:
+        self.__keys: list[str] = []
+        self.__onKeys: list[str] = []
+        self.__call = None
 
     def __on_key(self, event: keyboard.KeyboardEvent):
         if event.name in self.__keys and event.event_type == "up":

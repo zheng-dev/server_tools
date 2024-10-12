@@ -133,6 +133,16 @@ def parse(str1: str):
     return term_to_binary(eval(str1))
 
 
+def diff_time(stime: str = "2024-11-03 20:46:00") -> int:
+    import time
+
+    tFormat = "%Y-%m-%d %H:%M:%S"
+    dt = time.strptime(stime, tFormat)
+    utc = int(time.mktime(dt))
+    nowUtc = int(time.time())
+    return utc - nowUtc
+
+
 ##
 def main():
     import tkinter, tkinter.messagebox as t_box
@@ -155,7 +165,7 @@ def main():
     labTabBin = tkinter.Label(root, text="未选择表增量bin文件")
     # 保存表kv
     add_fram = tkinter.Frame(root, width=250, height=30)
-    val_src = scrolledtext.ScrolledText(add_fram, width=80, height=1)
+    val_src = tkinter.Text(add_fram, width=20, height=1)
     val_key = scrolledtext.ScrolledText(add_fram, width=80, height=1)
     val_text = scrolledtext.ScrolledText(add_fram, width=80, height=5)
 
@@ -199,9 +209,9 @@ def main():
         add_fram.pack_forget()
 
     tkinter.Button(add_fram, text="追加kv到表", command=save).pack()
-    val_src.pack()
+    val_src.pack(side="top", pady=12, anchor="w")
     val_key.pack()
-    val_text.pack()
+    val_text.pack(pady=12)
     # width，如果你设置width=50，那么意味着ScrolledText组件的宽度大约可以容纳50个字符。这些字符是指在组件的默认字体和字号下的“0”这样的标准字符。因此，实际的像素宽度将取决于所使用的字体和屏幕的显示设置
     txtCont = scrolledtext.ScrolledText(root, width=80, height=30)
 
@@ -257,6 +267,20 @@ def main():
             add_fram.pack(after=labTabBin)
 
     tkinter.Button(top, text="表存kv", command=disp_save).pack(side="left", padx=10)
+    time_txt = tkinter.Text(top, height=1, width=47)
+    time_txt.insert(1.0, "2024-11-03 20:46:00减系统当前时间的秒数差")
+    time_txt.pack(pady=12)
+
+    # 计算目标时间到当前时间的秒数差
+    def time_ok1(e):
+        v = time_txt.get(1.0, tkinter.END)
+        time_txt.delete(1.0, tkinter.END)
+        if len(v) < 19:
+            return
+        secondstr = diff_time(v[0:19])
+        time_txt.insert(1.0, str(secondstr))
+
+    time_txt.bind("<KeyRelease-Return>", time_ok1)
     top.pack(anchor="w")
 
     labTabBin.pack(side="top", anchor="w")

@@ -230,17 +230,20 @@ def main():
         # if len(dbPath) == 0:
         #     t_box.showinfo("err", "请先选择db目录")
         #     return
-        selBinPath: str = askopenfilename(title="选择表bin文件", initialdir=dbPath)
+        selBinPath: str = askopenfilenames(title="选择表bin文件", initialdir=dbPath)
         if len(selBinPath) == 0:
             t_box.showinfo("err", "必需选择db增量bin")
             return
 
         labTabBin.config(text=selBinPath)
-
-        termStr = binFile.open(selBinPath).get_row()
+        sp: list = list(selBinPath)
+        sp.sort()
         txtCont.config()
         txtCont.delete(1.0, tkinter.END)
-        txtCont.insert(1.0, termStr)
+        for selP in sp:
+            txtCont.insert(tkinter.CURRENT, f"\n===={selP}=====\n")
+            termStr = binFile.open(selP).get_row()
+            txtCont.insert(tkinter.CURRENT, termStr)
         highlight_word("val", "highlight", "red")
         highlight_word("key", "highlight1", "red")
         highlight_word("vsn", "highlight2", "red")

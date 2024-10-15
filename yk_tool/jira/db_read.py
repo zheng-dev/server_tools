@@ -9,6 +9,7 @@ from erlang import *
 from tkinter.filedialog import *
 import logging, struct
 from datetime import *
+from tkinter import scrolledtext
 
 
 if __name__ == "__main__":
@@ -79,9 +80,9 @@ class BinFile:
                     r = binary_to_term(bContext)
                     t = datetime.fromtimestamp(t1 // 1000)
                     ext_info: dict = {
+                        "vsn": vsn,
                         "key": key,
                         "val": r,
-                        "vsn": vsn,
                         "src": src,
                         "time": str(t) + str(t1 % 1000),
                         "row_num": row_num,
@@ -143,10 +144,25 @@ def diff_time(stime: str = "2024-11-03 20:46:00") -> int:
     return utc - nowUtc
 
 
+## 查找窗口
+def find_window(findStr: str, matchStr: str):
+    import tkinter
+
+    root = tkinter.Tk()
+    root.title("yk db表数据----匹配内容")  # #窗口标题
+    root.geometry("500x490+900+110")  # #窗口位置500后面是字母x
+    root.lift()
+
+    text = scrolledtext.ScrolledText(root, width=80, height=5)
+    text.insert(tkinter.CURRENT, matchStr)
+    text.pack(pady=12, fill=tkinter.BOTH, expand=True)
+    highlight_word(findStr, "highlightfind", "red", text, tkinter.END)
+    pass
+
+
 ##
 def main():
     import tkinter, tkinter.messagebox as t_box
-    from tkinter import scrolledtext
 
     logging.info("main start")
 
@@ -162,7 +178,9 @@ def main():
     root.lift()
 
     top = tkinter.Frame(root, width=250, height=30)
-    labTabBin = tkinter.Label(root, text="未选择表增量bin文件")
+    labTabBin = tkinter.Label(root, text="-----------------------------------")
+    matchStr = tkinter.Text(root, width=20, height=1)
+
     # 保存表kv
     add_fram = tkinter.Frame(root, width=250, height=30)
     val_src = tkinter.Text(add_fram, width=20, height=1)
@@ -235,7 +253,7 @@ def main():
             t_box.showinfo("err", "必需选择db增量bin")
             return
 
-        labTabBin.config(text=selBinPath)
+        # labTabBin.config(text=selBinPath)
         sp: list = list(selBinPath)
         sp.sort()
         txtCont.config()
@@ -244,18 +262,18 @@ def main():
             txtCont.insert(tkinter.CURRENT, f"\n===={selP}=====\n")
             termStr = binFile.open(selP).get_row()
             txtCont.insert(tkinter.CURRENT, termStr)
-        highlight_word("val", "highlight", "red")
-        highlight_word("key", "highlight1", "red")
-        highlight_word("vsn", "highlight2", "red")
-        highlight_word("row_num", "highlight3", "red")
+        highlight_word("val", "highlight", "red", txtCont, tkinter.END)
+        highlight_word("key", "highlight1", "red", txtCont, tkinter.END)
+        highlight_word("vsn", "highlight2", "red", txtCont, tkinter.END)
+        highlight_word("row_num", "highlight3", "red", txtCont, tkinter.END)
 
-        highlight_word("Atom", "highlight11", "blue")
-        highlight_word("Binary", "highlight12", "blue")
-        highlight_word("List", "highlight13", "blue")
-        highlight_word("Pid", "highlight14", "blue")
-        highlight_word("Port", "highlight15", "blue")
-        highlight_word("Reference", "highlight16", "blue")
-        highlight_word("Function", "highlight17", "blue")
+        highlight_word("Atom", "highlight11", "blue", txtCont, tkinter.END)
+        highlight_word("Binary", "highlight12", "blue", txtCont, tkinter.END)
+        highlight_word("List", "highlight13", "blue", txtCont, tkinter.END)
+        highlight_word("Pid", "highlight14", "blue", txtCont, tkinter.END)
+        highlight_word("Port", "highlight15", "blue", txtCont, tkinter.END)
+        highlight_word("Reference", "highlight16", "blue", txtCont, tkinter.END)
+        highlight_word("Function", "highlight17", "blue", txtCont, tkinter.END)
 
     tkinter.Button(top, text="表文件", command=fOTab).pack(side="left")
 
@@ -288,33 +306,52 @@ def main():
 
     labTabBin.pack(side="top", anchor="w")
 
+    # 查找
+    def find():
+        allStr = txtCont.get(1.0, tkinter.END)
+        findStr: str = (matchStr.get(1.0, tkinter.END)).strip()
+        matchStr.delete(1.0, tkinter.END)
+        matchStr.insert(1.0, "输入查找字符")
+        if findStr == "输入查找字符\n":
+            return
+        retStr: str = ""
+        for i in allStr.split("\n"):
+            if findStr in i:
+                retStr += f"{i}\n\n"
+        find_window(findStr, retStr)
+
+    matchStr.insert(1.0, "输入查找字符")
+    tkinter.Button(command=find, text="查找").pack(anchor="w")
+    matchStr.pack(side="top", anchor="w", pady=10)
+
     # bin显示
     txtCont.insert(1.0, "选择db-->选择表-->打开增量bin文件")
     # 全屏填充
     txtCont.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
 
-    # 定义一个函数来着色指定的单词
-    def highlight_word(word, tag, color):
-        # txtCont.tag_remove(tag, "1.0", tkinter.END)
-        start_index = "1.0"
-        while True:
-            # 寻找单词的起始位置
-            start_index = txtCont.search(word, start_index, tkinter.END)
-            if not start_index:
-                break
-            # 通过计算单词长度确定结束位置
-            end_index = txtCont.index(f"{start_index}+{len(word)}c")
-            # 添加标记
-            txtCont.tag_add(tag, start_index, end_index)
-            # 设置标记的属性来改变颜色
-            txtCont.tag_config(tag, foreground=color)
-            # 移动到文本的下一个部分
-            start_index = end_index
-        txtCont.tag_raise("sel")  # 使选择突出显示始终位于顶部
-
     root.mainloop()
     # tk主窗关闭后
     logging.info("main end")
+
+
+# 定义一个函数来着色指定的单词
+def highlight_word(word, tag, color, s: scrolledtext.ScrolledText, pos: int):
+    # txtCont.tag_remove(tag, "1.0", tkinter.END)
+    start_index = "1.0"
+    while True:
+        # 寻找单词的起始位置
+        start_index = s.search(word, start_index, pos)
+        if not start_index:
+            break
+        # 通过计算单词长度确定结束位置
+        end_index = s.index(f"{start_index}+{len(word)}c")
+        # 添加标记
+        s.tag_add(tag, start_index, end_index)
+        # 设置标记的属性来改变颜色
+        s.tag_config(tag, foreground=color)
+        # 移动到文本的下一个部分
+        start_index = end_index
+    s.tag_raise("sel")  # 使选择突出显示始终位于顶部
 
 
 if __name__ == "__main__":

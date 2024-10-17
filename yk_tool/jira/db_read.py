@@ -179,7 +179,28 @@ def main():
 
     top = tkinter.Frame(root, width=250, height=30)
     labTabBin = tkinter.Label(root, text="-----------------------------------")
-    matchStr = tkinter.Text(root, width=20, height=1)
+
+    find_fram = tkinter.Frame(root, width=250, height=30)
+    matchStr = tkinter.Text(find_fram, width=20, height=1)
+
+    # 查找
+    def find():
+        allStr = txtCont.get(1.0, tkinter.END)
+        findStr: str = matchStr.get(1.0, tkinter.END)
+        matchStr.delete(1.0, tkinter.END)
+        matchStr.insert(1.0, "输入查找字符")
+        if findStr == "输入查找字符\n":
+            return
+        retStr: str = ""
+        for i in allStr.split("\n"):
+            if findStr in i:
+                retStr += f"{i}\n\n"
+        find_window(findStr, retStr)
+
+    matchStr.insert(1.0, "输入查找字符")
+    fB = tkinter.Button(find_fram, command=find, text="查找")
+    fB.pack(anchor="nw", side="left", padx=3)
+    matchStr.pack(side="left", anchor="nw", pady=10, after=fB)
 
     # 保存表kv
     add_fram = tkinter.Frame(root, width=250, height=30)
@@ -234,13 +255,13 @@ def main():
     txtCont = scrolledtext.ScrolledText(root, width=80, height=30)
 
     # 选库
-    def fODb():
-        nonlocal dbPath
-        af = askdirectory(title="选择库目录")
-        dbPath = af
-        print(af)
+    # def fODb():
+    #     nonlocal dbPath
+    #     af = askdirectory(title="选择库目录")
+    #     dbPath = af
+    #     print(af)
 
-    tkinter.Button(top, text="db目录", command=fODb).pack(side="left", padx=10, pady=2)
+    # tkinter.Button(top, text="db目录", command=fODb).pack(side="left", padx=10, pady=2)
 
     # 选表
     def fOTab():
@@ -290,10 +311,9 @@ def main():
     tkinter.Button(top, text="表存kv", command=disp_save).pack(side="left", padx=10)
     time_txt = tkinter.Text(top, height=1, width=47)
     time_txt.insert(1.0, "2024-11-03 20:46:00减系统当前时间的秒数差")
-    time_txt.pack(pady=12)
 
     # 计算目标时间到当前时间的秒数差
-    def time_ok1(e):
+    def time_ok1():
         v = time_txt.get(1.0, tkinter.END)
         time_txt.delete(1.0, tkinter.END)
         if len(v) < 19:
@@ -301,29 +321,14 @@ def main():
         secondstr = diff_time(v[0:19])
         time_txt.insert(1.0, str(secondstr))
 
-    time_txt.bind("<KeyRelease-Return>", time_ok1)
+    # time_txt.bind("<Return>", time_ok1)
+    tkinter.Button(top, text="计算时间", command=time_ok1).pack(side="left")
+    time_txt.pack(pady=12)
     top.pack(anchor="w")
 
     labTabBin.pack(side="top", anchor="w")
 
-    # 查找
-    def find():
-        allStr = txtCont.get(1.0, tkinter.END)
-        findStr: str = (matchStr.get(1.0, tkinter.END)).strip()
-        matchStr.delete(1.0, tkinter.END)
-        matchStr.insert(1.0, "输入查找字符")
-        if findStr == "输入查找字符\n":
-            return
-        retStr: str = ""
-        for i in allStr.split("\n"):
-            if findStr in i:
-                retStr += f"{i}\n\n"
-        find_window(findStr, retStr)
-
-    matchStr.insert(1.0, "输入查找字符")
-    tkinter.Button(command=find, text="查找").pack(anchor="w")
-    matchStr.pack(side="top", anchor="w", pady=10)
-
+    find_fram.pack(side="top", fill="both", expand=True)
     # bin显示
     txtCont.insert(1.0, "选择db-->选择表-->打开增量bin文件")
     # 全屏填充

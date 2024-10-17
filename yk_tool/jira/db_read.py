@@ -149,7 +149,7 @@ def find_window(findStr: str, matchStr: str):
     import tkinter
 
     root = tkinter.Tk()
-    root.title("yk db表数据----匹配内容")  # #窗口标题
+    root.title(f"yk db表数据-->{findStr}")  # #窗口标题
     root.geometry("500x490+900+110")  # #窗口位置500后面是字母x
     root.lift()
 
@@ -166,7 +166,6 @@ def main():
 
     logging.info("main start")
 
-    dbPath: str = ""
     binPath: str = ""
     binFile = BinFile()
     dis: bool = False
@@ -254,22 +253,10 @@ def main():
     # width，如果你设置width=50，那么意味着ScrolledText组件的宽度大约可以容纳50个字符。这些字符是指在组件的默认字体和字号下的“0”这样的标准字符。因此，实际的像素宽度将取决于所使用的字体和屏幕的显示设置
     txtCont = scrolledtext.ScrolledText(root, width=80, height=30)
 
-    # 选库
-    # def fODb():
-    #     nonlocal dbPath
-    #     af = askdirectory(title="选择库目录")
-    #     dbPath = af
-    #     print(af)
-
-    # tkinter.Button(top, text="db目录", command=fODb).pack(side="left", padx=10, pady=2)
-
     # 选表
     def fOTab():
-        nonlocal dbPath, binPath, binFile
-        # if len(dbPath) == 0:
-        #     t_box.showinfo("err", "请先选择db目录")
-        #     return
-        selBinPath: str = askopenfilenames(title="选择表bin文件", initialdir=dbPath)
+        nonlocal binPath, binFile
+        selBinPath: str = askopenfilenames(title="选择表bin文件", initialdir="")
         if len(selBinPath) == 0:
             t_box.showinfo("err", "必需选择db增量bin")
             return
@@ -321,7 +308,6 @@ def main():
         secondstr = diff_time(v[0:19])
         time_txt.insert(1.0, str(secondstr))
 
-    # time_txt.bind("<Return>", time_ok1)
     tkinter.Button(top, text="计算时间", command=time_ok1).pack(side="left")
     time_txt.pack(pady=12)
     top.pack(anchor="w")
@@ -330,7 +316,7 @@ def main():
 
     find_fram.pack(side="top", fill="both", expand=True)
     # bin显示
-    txtCont.insert(1.0, "选择db-->选择表-->打开增量bin文件")
+    txtCont.insert(1.0, "选择表-->选择增量目录-->打开增量bin文件(可多选)")
     # 全屏填充
     txtCont.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
 

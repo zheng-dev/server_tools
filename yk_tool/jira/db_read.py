@@ -156,7 +156,7 @@ def find_window(findStr: str, matchStr: str):
     text = scrolledtext.ScrolledText(root, width=80, height=5)
     text.insert(tkinter.CURRENT, matchStr)
     text.pack(pady=12, fill=tkinter.BOTH, expand=True)
-    highlight_word(findStr, "highlightfind", "red", text, tkinter.END)
+    highlight_word([(findStr, "white", "royalblue")], text, tkinter.END)
     pass
 
 
@@ -174,54 +174,49 @@ def main():
             self.binPath: str = ""
             self.binFile = BinFile()
             self.dis: bool = False
-
-        def display(self):
             self.lift()
 
+        def display(self):
             self.top = tkinter.Frame(self, width=250, height=30)
-            self.labTabBin = tkinter.Label(
-                self, text="--------------------------------------"
-            )
-
-            self.find_fram = tkinter.Frame(self, width=250, height=30)
-            self.matchStr = tkinter.Text(self.find_fram, width=20, height=1)
+            self.findFram = tkinter.Frame(self, width=250, height=30)
+            self.fB = tkinter.Button(self.findFram, command=self.find, text="查找")
+            self.fB.pack(side="left", padx=3)
+            self.matchStr = tkinter.Text(self.findFram, width=20, height=1)
             self.matchStr.insert(1.0, "输入查找字符")
-            self.fB = tkinter.Button(self.find_fram, command=self.find, text="查找")
-            self.fB.pack(anchor="nw", side="left", padx=3)
-            self.matchStr.pack(side="left", anchor="nw", pady=10, after=self.fB)
+            self.matchStr.pack(side="left", pady=10, padx=5, after=self.fB)
 
             # 保存表kv
-            self.add_fram = tkinter.Frame(self, width=250, height=30)
-            self.val_src = tkinter.Text(self.add_fram, width=20, height=1)
-            self.val_key = scrolledtext.ScrolledText(self.add_fram, width=80, height=1)
-            self.val_text = scrolledtext.ScrolledText(self.add_fram, width=80, height=5)
-            tkinter.Button(self.add_fram, text="追加kv到表", command=self.save).pack()
-            self.val_src.pack(side="top", pady=12, anchor="w")
-            self.val_key.pack()
-            self.val_text.pack(pady=12)
+            self.addFram = tkinter.Frame(self, width=250, height=30)
+            self.valSrc = tkinter.Text(self.addFram, width=20, height=1)
+            self.valKey = scrolledtext.ScrolledText(self.addFram, width=80, height=1)
+            self.valText = scrolledtext.ScrolledText(self.addFram, width=80, height=5)
+            tkinter.Button(self.addFram, text="追加kv到表", command=self.save).pack()
+            self.valSrc.pack(side="top", pady=12, anchor="w")
+            self.valKey.pack()
+            self.valText.pack(pady=12)
+            # 显示表bin内容
             # width，如果你设置width=50，那么意味着ScrolledText组件的宽度大约可以容纳50个字符。这些字符是指在组件的默认字体和字号下的“0”这样的标准字符。因此，实际的像素宽度将取决于所使用的字体和屏幕的显示设置
             self.txtCont = scrolledtext.ScrolledText(self, width=80, height=30)
-            tkinter.Button(self.top, text="表文件", command=self.fOTab).pack(
+            tkinter.Button(self.top, text="打开表文件", command=self.fOTab).pack(
                 side="left"
             )
-
-            tkinter.Button(self.top, text="表存kv", command=self.disp_save).pack(
+            tkinter.Button(self.top, text="表追加存kv", command=self.disp_save).pack(
                 side="left", padx=10
             )
-            self.time_txt = tkinter.Text(self.top, height=1, width=47)
-            self.time_txt.insert(1.0, "2024-11-03 20:46:00减系统当前时间的秒数差")
-
             tkinter.Button(self.top, text="计算时间", command=self.time_ok1).pack(
                 side="left"
             )
-            self.time_txt.pack(pady=12)
+            self.timeTxt = tkinter.Text(self.top, height=1, width=47)
+            self.timeTxt.insert(1.0, "2024-11-03 20:46:00减系统当前时间的秒数差")
+            self.timeTxt.pack(pady=12)
             self.top.pack(anchor="w", ipadx=10, padx=5)
-
+            self.labTabBin = tkinter.Label(
+                self, text="--------------------------------------"
+            )
             self.labTabBin.pack(side="top", anchor="w")
-
-            self.find_fram.pack(side="top", fill="x", expand=False, padx=2)
-            # bin显示
+            self.findFram.pack(side="top", fill="x", expand=False, padx=2)
             self.txtCont.insert(1.0, "选择表-->选择增量目录-->打开增量bin文件(可多选)")
+
             # 全屏填充
             self.txtCont.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
             return self
@@ -229,10 +224,10 @@ def main():
         # 保存
         def find(self):
             allStr = self.txtCont.get(1.0, tkinter.END)
-            findStr: str = self.matchStr.get(1.0, tkinter.END)
+            findStr: str = self.matchStr.get(1.0, tkinter.END)[:-1]  # 去掉系统加的\n
             self.matchStr.delete(1.0, tkinter.END)
             self.matchStr.insert(1.0, "输入查找字符")
-            if findStr == "输入查找字符\n":
+            if findStr == "输入查找字符":
                 return
             retStr: str = ""
             for i in allStr.split("\n"):
@@ -244,9 +239,9 @@ def main():
         def save(self):
             import os
 
-            srcInput: str = self.val_key.get(1.0, tkinter.END)
-            key: str = self.val_key.get(1.0, tkinter.END)
-            val: str = self.val_text.get(1.0, tkinter.END)
+            srcInput: str = self.valSrc.get(1.0, tkinter.END)
+            key: str = self.valKey.get(1.0, tkinter.END)
+            val: str = self.valText.get(1.0, tkinter.END)
             if "放入key串\n" == key or "放入value串\n" == val:
                 return
             str_check(key)
@@ -275,10 +270,10 @@ def main():
             finally:
                 os.chdir(os.path.dirname(os.path.abspath(self.binFile.fileName)))
             self.dis = False
-            self.val_key.delete(1.0, tkinter.END)
-            self.val_src.delete(1.0, tkinter.END)
-            self.val_text.delete(1.0, tkinter.END)
-            self.add_fram.pack_forget()
+            self.valKey.delete(1.0, tkinter.END)
+            self.valSrc.delete(1.0, tkinter.END)
+            self.valText.delete(1.0, tkinter.END)
+            self.addFram.pack_forget()
 
         # 选表
         def fOTab(self):
@@ -296,62 +291,67 @@ def main():
                 self.txtCont.insert(tkinter.CURRENT, f"\n===={selP}=====\n")
                 termStr = self.binFile.open(selP).get_row()
                 self.txtCont.insert(tkinter.CURRENT, termStr)
-            highlight_word("val", "highlight", "red", self.txtCont, tkinter.END)
-            highlight_word("key", "highlight1", "red", self.txtCont, tkinter.END)
-            highlight_word("vsn", "highlight2", "red", self.txtCont, tkinter.END)
-            highlight_word("row_num", "highlight3", "red", self.txtCont, tkinter.END)
-
-            highlight_word("Atom", "highlight11", "blue", self.txtCont, tkinter.END)
-            highlight_word("Binary", "highlight12", "blue", self.txtCont, tkinter.END)
-            highlight_word("List", "highlight13", "blue", self.txtCont, tkinter.END)
-            highlight_word("Pid", "highlight14", "blue", self.txtCont, tkinter.END)
-            highlight_word("Port", "highlight15", "blue", self.txtCont, tkinter.END)
-            highlight_word(
-                "Reference", "highlight16", "blue", self.txtCont, tkinter.END
-            )
-            highlight_word("Function", "highlight17", "blue", self.txtCont, tkinter.END)
+            wordColor: list = [
+                ("val", "red", ""),
+                ("key", "red", ""),
+                ("vsn", "red", ""),
+                ("row_num", "red", ""),
+                ("Atom", "blue", ""),
+                ("Binary", "blue", ""),
+                ("List", "blue", ""),
+                ("Pid", "blue", ""),
+                ("Port", "blue", ""),
+                ("Reference", "blue", ""),
+                ("Function", "blue", ""),
+            ]
+            highlight_word(wordColor, self.txtCont, tkinter.END)
 
         # 显示保存界面
         def disp_save(self):
             if not self.dis:
                 self.dis = True
-                self.val_key.insert(1.0, "放入key串")
-                self.val_src.insert(1.0, "放入src整数")
-                self.val_text.insert(1.0, "放入value串")
-                self.add_fram.pack(after=self.labTabBin)
+                self.valKey.insert(1.0, "放入key串")
+                self.valSrc.insert(1.0, "放入src整数")
+                self.valText.insert(1.0, "放入value串")
+                self.addFram.pack(after=self.labTabBin)
 
         # 计算目标时间到当前时间的秒数差
         def time_ok1(self):
-            v = self.time_txt.get(1.0, tkinter.END)
-            self.time_txt.delete(1.0, tkinter.END)
+            v = self.timeTxt.get(1.0, tkinter.END)
+            self.timeTxt.delete(1.0, tkinter.END)
             if len(v) < 19:
                 return
             secondstr = diff_time(v[0:19])
-            self.time_txt.insert(1.0, str(secondstr))
+            self.timeTxt.insert(1.0, str(secondstr))
 
-    a = DbWindow()
-    a.display().mainloop()
+    gui = DbWindow()
+    gui.display().mainloop()
 
     # tk主窗关闭后
     logging.info("main end")
 
 
 # 定义一个函数来着色指定的单词
-def highlight_word(word, tag, color, s: scrolledtext.ScrolledText, pos: int):
+def highlight_word(
+    wordColor: list[tuple[str, str, str]], s: scrolledtext.ScrolledText, pos: int
+):
     # txtCont.tag_remove(tag, "1.0", tkinter.END)
-    start_index = "1.0"
-    while True:
-        start_index = s.search(word, start_index, pos)
-        if not start_index:
-            break
-        # 通过计算单词长度确定结束位置
-        end_index = s.index(f"{start_index}+{len(word)}c")
-        # 添加标记
-        s.tag_add(tag, start_index, end_index)
-        # 设置标记的属性来改变颜色
-        s.tag_config(tag, foreground=color)
-        # 移动到文本的下一个部分
-        start_index = end_index
+    tag: int = 0
+    for word, color, gColor in wordColor:
+        startIndex = "1.0"
+        tag += 1
+        tagS: str = int(tag)
+        while True:
+            startIndex = s.search(word, startIndex, pos)
+            if not startIndex:
+                break
+            # 通过计算单词长度确定结束位置
+            endIndex = s.index(f"{startIndex}+{len(word)}c")
+            # 添加标记
+            s.tag_add(tagS, startIndex, endIndex)
+            s.tag_config(tagS, foreground=color, background=gColor)
+            # 移动到文本的下一个部分
+            startIndex = endIndex
     s.tag_raise("sel")  # 使选择突出显示始终位于顶部
 
 

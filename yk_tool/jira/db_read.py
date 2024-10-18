@@ -177,7 +177,7 @@ def main():
     root.lift()
 
     top = tkinter.Frame(root, width=250, height=30)
-    labTabBin = tkinter.Label(root, text="-----------------------------------")
+    labTabBin = tkinter.Label(root, text="--------------------------------------")
 
     find_fram = tkinter.Frame(root, width=250, height=30)
     matchStr = tkinter.Text(find_fram, width=20, height=1)
@@ -310,11 +310,11 @@ def main():
 
     tkinter.Button(top, text="计算时间", command=time_ok1).pack(side="left")
     time_txt.pack(pady=12)
-    top.pack(anchor="w")
+    top.pack(anchor="w", ipadx=10, padx=5)
 
     labTabBin.pack(side="top", anchor="w")
 
-    find_fram.pack(side="top", fill="both", expand=True)
+    find_fram.pack(side="top", fill="x", expand=False, padx=2)
     # bin显示
     txtCont.insert(1.0, "选择表-->选择增量目录-->打开增量bin文件(可多选)")
     # 全屏填充

@@ -277,7 +277,9 @@ def main():
 
         # 选表
         def fOTab(self):
-            selBinPath: str = askopenfilenames(title="选择表bin文件", initialdir="")
+            selBinPath: str = askopenfilenames(
+                title="选择表bin文件(可多选)", initialdir=""
+            )
             if len(selBinPath) == 0:
                 t_box.showinfo("err", "必需选择db增量bin")
                 return

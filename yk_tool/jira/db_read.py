@@ -166,161 +166,172 @@ def main():
 
     logging.info("main start")
 
-    binPath: str = ""
-    binFile = BinFile()
-    dis: bool = False
+    class DbWindow(tkinter.Tk):
+        def __init__(self):
+            super().__init__()
+            self.title("yk db表数据")  # #窗口标题
+            self.geometry("600x490+900+110")  # #窗口位置500后面是字母x
+            self.binPath: str = ""
+            self.binFile = BinFile()
+            self.dis: bool = False
 
-    # 界面
-    root = tkinter.Tk()
-    root.title("yk db表数据")  # #窗口标题
-    root.geometry("600x490+900+110")  # #窗口位置500后面是字母x
-    root.lift()
+        def display(self):
+            self.lift()
 
-    top = tkinter.Frame(root, width=250, height=30)
-    labTabBin = tkinter.Label(root, text="--------------------------------------")
+            self.top = tkinter.Frame(self, width=250, height=30)
+            self.labTabBin = tkinter.Label(
+                self, text="--------------------------------------"
+            )
 
-    find_fram = tkinter.Frame(root, width=250, height=30)
-    matchStr = tkinter.Text(find_fram, width=20, height=1)
+            self.find_fram = tkinter.Frame(self, width=250, height=30)
+            self.matchStr = tkinter.Text(self.find_fram, width=20, height=1)
+            self.matchStr.insert(1.0, "输入查找字符")
+            self.fB = tkinter.Button(self.find_fram, command=self.find, text="查找")
+            self.fB.pack(anchor="nw", side="left", padx=3)
+            self.matchStr.pack(side="left", anchor="nw", pady=10, after=self.fB)
 
-    # 查找
-    def find():
-        allStr = txtCont.get(1.0, tkinter.END)
-        findStr: str = matchStr.get(1.0, tkinter.END)
-        matchStr.delete(1.0, tkinter.END)
-        matchStr.insert(1.0, "输入查找字符")
-        if findStr == "输入查找字符\n":
-            return
-        retStr: str = ""
-        for i in allStr.split("\n"):
-            if findStr in i:
-                retStr += f"{i}\n\n"
-        find_window(findStr, retStr)
+            # 保存表kv
+            self.add_fram = tkinter.Frame(self, width=250, height=30)
+            self.val_src = tkinter.Text(self.add_fram, width=20, height=1)
+            self.val_key = scrolledtext.ScrolledText(self.add_fram, width=80, height=1)
+            self.val_text = scrolledtext.ScrolledText(self.add_fram, width=80, height=5)
+            tkinter.Button(self.add_fram, text="追加kv到表", command=self.save).pack()
+            self.val_src.pack(side="top", pady=12, anchor="w")
+            self.val_key.pack()
+            self.val_text.pack(pady=12)
+            # width，如果你设置width=50，那么意味着ScrolledText组件的宽度大约可以容纳50个字符。这些字符是指在组件的默认字体和字号下的“0”这样的标准字符。因此，实际的像素宽度将取决于所使用的字体和屏幕的显示设置
+            self.txtCont = scrolledtext.ScrolledText(self, width=80, height=30)
+            tkinter.Button(self.top, text="表文件", command=self.fOTab).pack(
+                side="left"
+            )
 
-    matchStr.insert(1.0, "输入查找字符")
-    fB = tkinter.Button(find_fram, command=find, text="查找")
-    fB.pack(anchor="nw", side="left", padx=3)
-    matchStr.pack(side="left", anchor="nw", pady=10, after=fB)
+            tkinter.Button(self.top, text="表存kv", command=self.disp_save).pack(
+                side="left", padx=10
+            )
+            self.time_txt = tkinter.Text(self.top, height=1, width=47)
+            self.time_txt.insert(1.0, "2024-11-03 20:46:00减系统当前时间的秒数差")
 
-    # 保存表kv
-    add_fram = tkinter.Frame(root, width=250, height=30)
-    val_src = tkinter.Text(add_fram, width=20, height=1)
-    val_key = scrolledtext.ScrolledText(add_fram, width=80, height=1)
-    val_text = scrolledtext.ScrolledText(add_fram, width=80, height=5)
+            tkinter.Button(self.top, text="计算时间", command=self.time_ok1).pack(
+                side="left"
+            )
+            self.time_txt.pack(pady=12)
+            self.top.pack(anchor="w", ipadx=10, padx=5)
 
-    # 追加kv到表的最新bin文件中
-    def save():
-        nonlocal dis, binFile
-        import os
+            self.labTabBin.pack(side="top", anchor="w")
 
-        srcInput: str = val_key.get(1.0, tkinter.END)
-        key: str = val_key.get(1.0, tkinter.END)
-        val: str = val_text.get(1.0, tkinter.END)
-        if "放入key串\n" == key or "放入value串\n" == val:
-            return
-        str_check(key)
-        str_check(val)
+            self.find_fram.pack(side="top", fill="x", expand=False, padx=2)
+            # bin显示
+            self.txtCont.insert(1.0, "选择表-->选择增量目录-->打开增量bin文件(可多选)")
+            # 全屏填充
+            self.txtCont.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
+            return self
 
-        tab: str = os.path.dirname(os.path.dirname(os.path.abspath(binFile.fileName)))
-        try:
-            os.chdir(tab)
-            dirl = os.listdir(".")
-            dirl.sort()
-            dirl.reverse()
-            os.chdir(dirl[0])
-            fileL = os.listdir(".")
-            fileL.sort()
-            fileL.reverse()
-            appendFile: str = fileL[0]  # 在最新的文件追加
+        # 保存
+        def find(self):
+            allStr = self.txtCont.get(1.0, tkinter.END)
+            findStr: str = self.matchStr.get(1.0, tkinter.END)
+            self.matchStr.delete(1.0, tkinter.END)
+            self.matchStr.insert(1.0, "输入查找字符")
+            if findStr == "输入查找字符\n":
+                return
+            retStr: str = ""
+            for i in allStr.split("\n"):
+                if findStr in i:
+                    retStr += f"{i}\n\n"
+            find_window(findStr, retStr)
 
-            keyBin = parse(key)
-            valBin = parse(val)
-            binFile.save_rows(appendFile, keyBin, valBin, src=int(srcInput))
+        # 追加kv到表的最新bin文件中
+        def save(self):
+            import os
 
-            t_box.showinfo("sucess", "操作成功")
-            print(tab, fileL[0], key, keyBin, valBin)
-        finally:
-            os.chdir(os.path.dirname(os.path.abspath(binFile.fileName)))
-        dis = False
-        val_key.delete(1.0, tkinter.END)
-        val_src.delete(1.0, tkinter.END)
-        val_text.delete(1.0, tkinter.END)
-        add_fram.pack_forget()
+            srcInput: str = self.val_key.get(1.0, tkinter.END)
+            key: str = self.val_key.get(1.0, tkinter.END)
+            val: str = self.val_text.get(1.0, tkinter.END)
+            if "放入key串\n" == key or "放入value串\n" == val:
+                return
+            str_check(key)
+            str_check(val)
 
-    tkinter.Button(add_fram, text="追加kv到表", command=save).pack()
-    val_src.pack(side="top", pady=12, anchor="w")
-    val_key.pack()
-    val_text.pack(pady=12)
-    # width，如果你设置width=50，那么意味着ScrolledText组件的宽度大约可以容纳50个字符。这些字符是指在组件的默认字体和字号下的“0”这样的标准字符。因此，实际的像素宽度将取决于所使用的字体和屏幕的显示设置
-    txtCont = scrolledtext.ScrolledText(root, width=80, height=30)
+            tab: str = os.path.dirname(
+                os.path.dirname(os.path.abspath(self.binFile.fileName))
+            )
+            try:
+                os.chdir(tab)
+                dirl = os.listdir(".")
+                dirl.sort()
+                dirl.reverse()
+                os.chdir(dirl[0])
+                fileL = os.listdir(".")
+                fileL.sort()
+                fileL.reverse()
+                appendFile: str = fileL[0]  # 在最新的文件追加
 
-    # 选表
-    def fOTab():
-        nonlocal binPath, binFile
-        selBinPath: str = askopenfilenames(title="选择表bin文件", initialdir="")
-        if len(selBinPath) == 0:
-            t_box.showinfo("err", "必需选择db增量bin")
-            return
+                keyBin = parse(key)
+                valBin = parse(val)
+                self.binFile.save_rows(appendFile, keyBin, valBin, src=int(srcInput))
 
-        # labTabBin.config(text=selBinPath)
-        sp: list = list(selBinPath)
-        sp.sort()
-        txtCont.config()
-        txtCont.delete(1.0, tkinter.END)
-        for selP in sp:
-            txtCont.insert(tkinter.CURRENT, f"\n===={selP}=====\n")
-            termStr = binFile.open(selP).get_row()
-            txtCont.insert(tkinter.CURRENT, termStr)
-        highlight_word("val", "highlight", "red", txtCont, tkinter.END)
-        highlight_word("key", "highlight1", "red", txtCont, tkinter.END)
-        highlight_word("vsn", "highlight2", "red", txtCont, tkinter.END)
-        highlight_word("row_num", "highlight3", "red", txtCont, tkinter.END)
+                t_box.showinfo("sucess", "操作成功")
+                # print(tab, fileL[0], key, keyBin, valBin)
+            finally:
+                os.chdir(os.path.dirname(os.path.abspath(self.binFile.fileName)))
+            self.dis = False
+            self.val_key.delete(1.0, tkinter.END)
+            self.val_src.delete(1.0, tkinter.END)
+            self.val_text.delete(1.0, tkinter.END)
+            self.add_fram.pack_forget()
 
-        highlight_word("Atom", "highlight11", "blue", txtCont, tkinter.END)
-        highlight_word("Binary", "highlight12", "blue", txtCont, tkinter.END)
-        highlight_word("List", "highlight13", "blue", txtCont, tkinter.END)
-        highlight_word("Pid", "highlight14", "blue", txtCont, tkinter.END)
-        highlight_word("Port", "highlight15", "blue", txtCont, tkinter.END)
-        highlight_word("Reference", "highlight16", "blue", txtCont, tkinter.END)
-        highlight_word("Function", "highlight17", "blue", txtCont, tkinter.END)
+        # 选表
+        def fOTab(self):
+            selBinPath: str = askopenfilenames(title="选择表bin文件", initialdir="")
+            if len(selBinPath) == 0:
+                t_box.showinfo("err", "必需选择db增量bin")
+                return
 
-    tkinter.Button(top, text="表文件", command=fOTab).pack(side="left")
+            # labTabBin.config(text=selBinPath)
+            sp: list = list(selBinPath)
+            sp.sort()
+            self.txtCont.config()
+            self.txtCont.delete(1.0, tkinter.END)
+            for selP in sp:
+                self.txtCont.insert(tkinter.CURRENT, f"\n===={selP}=====\n")
+                termStr = self.binFile.open(selP).get_row()
+                self.txtCont.insert(tkinter.CURRENT, termStr)
+            highlight_word("val", "highlight", "red", self.txtCont, tkinter.END)
+            highlight_word("key", "highlight1", "red", self.txtCont, tkinter.END)
+            highlight_word("vsn", "highlight2", "red", self.txtCont, tkinter.END)
+            highlight_word("row_num", "highlight3", "red", self.txtCont, tkinter.END)
 
-    # 显示保存界面
-    def disp_save():
-        nonlocal dis
-        if not dis:
-            dis = True
-            val_key.insert(1.0, "放入key串")
-            val_src.insert(1.0, "放入src整数")
-            val_text.insert(1.0, "放入value串")
-            add_fram.pack(after=labTabBin)
+            highlight_word("Atom", "highlight11", "blue", self.txtCont, tkinter.END)
+            highlight_word("Binary", "highlight12", "blue", self.txtCont, tkinter.END)
+            highlight_word("List", "highlight13", "blue", self.txtCont, tkinter.END)
+            highlight_word("Pid", "highlight14", "blue", self.txtCont, tkinter.END)
+            highlight_word("Port", "highlight15", "blue", self.txtCont, tkinter.END)
+            highlight_word(
+                "Reference", "highlight16", "blue", self.txtCont, tkinter.END
+            )
+            highlight_word("Function", "highlight17", "blue", self.txtCont, tkinter.END)
 
-    tkinter.Button(top, text="表存kv", command=disp_save).pack(side="left", padx=10)
-    time_txt = tkinter.Text(top, height=1, width=47)
-    time_txt.insert(1.0, "2024-11-03 20:46:00减系统当前时间的秒数差")
+        # 显示保存界面
+        def disp_save(self):
+            if not self.dis:
+                self.dis = True
+                self.val_key.insert(1.0, "放入key串")
+                self.val_src.insert(1.0, "放入src整数")
+                self.val_text.insert(1.0, "放入value串")
+                self.add_fram.pack(after=self.labTabBin)
 
-    # 计算目标时间到当前时间的秒数差
-    def time_ok1():
-        v = time_txt.get(1.0, tkinter.END)
-        time_txt.delete(1.0, tkinter.END)
-        if len(v) < 19:
-            return
-        secondstr = diff_time(v[0:19])
-        time_txt.insert(1.0, str(secondstr))
+        # 计算目标时间到当前时间的秒数差
+        def time_ok1(self):
+            v = self.time_txt.get(1.0, tkinter.END)
+            self.time_txt.delete(1.0, tkinter.END)
+            if len(v) < 19:
+                return
+            secondstr = diff_time(v[0:19])
+            self.time_txt.insert(1.0, str(secondstr))
 
-    tkinter.Button(top, text="计算时间", command=time_ok1).pack(side="left")
-    time_txt.pack(pady=12)
-    top.pack(anchor="w", ipadx=10, padx=5)
+    a = DbWindow()
+    a.display().mainloop()
 
-    labTabBin.pack(side="top", anchor="w")
-
-    find_fram.pack(side="top", fill="x", expand=False, padx=2)
-    # bin显示
-    txtCont.insert(1.0, "选择表-->选择增量目录-->打开增量bin文件(可多选)")
-    # 全屏填充
-    txtCont.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
-
-    root.mainloop()
     # tk主窗关闭后
     logging.info("main end")
 
@@ -330,7 +341,6 @@ def highlight_word(word, tag, color, s: scrolledtext.ScrolledText, pos: int):
     # txtCont.tag_remove(tag, "1.0", tkinter.END)
     start_index = "1.0"
     while True:
-        # 寻找单词的起始位置
         start_index = s.search(word, start_index, pos)
         if not start_index:
             break

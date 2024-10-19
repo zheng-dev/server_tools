@@ -213,56 +213,51 @@ def main():
     from tkinter import scrolledtext
 
     logging.info("main_win")
-    jira = MyJira.single()  # 时会创出event_loop
-    jira.async_login()
 
-    root = tkinter.Tk()
-    root.title("jira")  # #窗口标题
-    root.geometry("260x210+900+110")  # #窗口位置500后面是字母x
-    root.lift()
-    root.resizable(False, False)
-    l1 = scrolledtext.ScrolledText(root, height=20, width=38)
-    l1.pack(side=tkinter.LEFT, fill="both", expand=True)
-    # yscrollbar = tkinter.Scrollbar(root)
-    # yscrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
-    # yscrollbar.config(command=l1.yview)
-    # l1.config(yscrollcommand=yscrollbar.set)
+    class JWindow(tkinter.Tk):
+        def __init__(self):
+            super().__init__()
+            self.title("jira")  # #窗口标题
+            self.geometry("260x210+900+110")  # #窗口位置500后面是字母x
+            self.lift()
+            self.resizable(False, False)
+            #
+            self.jira = MyJira.single()  # 时会创出event_loop
+            self.jira.async_login()
+            self.browseUrl = self.jira.cfg["browse"]
 
-    browseUrl = jira.cfg["browse"]
+        def display(self):
+            self.l1 = scrolledtext.ScrolledText(self, height=20, width=38)
+            self.l1.pack(side=tkinter.LEFT, fill="both", expand=True)
+            self.after(10, self.update)
+            self.bind("<Escape>", self.hide)
+            self.l1.bind("<Control-Button-1>", self.jira_info)
+            # 显示窗口-绑定全局快捷键
+            BindKey().hook(["alt", "q", "0"], self.deiconify)
+            return self
 
-    def update():
-        nonlocal jira, root, l1
-        r: tuple[list[str], int] = jira.jira()
-        (r1, ms) = r
-        if len(r1) > 0:
-            tStr = time.strftime(
-                f"==%m/%d %H:%M:%S num:{len(r1)}==\n", time.localtime()
-            )
-            l1.insert(1.0, tStr + ("\n".join(r1)) + "\n")
-            root.deiconify()
-        root.after(ms, update)
+        def update(self):
+            r: tuple[list[str], int] = self.jira.jira()
+            (r1, ms) = r
+            if len(r1) > 0:
+                tStr = time.strftime(
+                    f"==%m/%d %H:%M:%S num:{len(r1)}==\n", time.localtime()
+                )
+                self.l1.insert(1.0, tStr + ("\n".join(r1)) + "\n")
+                self.deiconify()
+            self.after(ms, self.update)
 
-    root.after(10, update)
+        # 隐藏
+        def hide(self, event):
+            self.withdraw()
 
-    # 隐藏
-    def hide(event):
-        nonlocal root
-        root.withdraw()
+        # 打开jira号的详情
+        def jira_info(self, event):
+            t = self.l1.get(tkinter.SEL_FIRST, tkinter.SEL_LAST)
+            webbrowser.open(f"{self.browseUrl}{t}")
 
-    root.bind("<Escape>", hide)
-
-    # 打开jira号的详情
-    def jira_info(event):
-        nonlocal l1, browseUrl
-        t = l1.get(tkinter.SEL_FIRST, tkinter.SEL_LAST)
-        webbrowser.open(f"{browseUrl}{t}")
-
-    l1.bind("<Control-Button-1>", jira_info)
-
-    # 显示窗口-绑定全局快捷键
-    BindKey().hook(["alt", "q", "0"], root.deiconify)
-
-    root.mainloop()
+    gui = JWindow()
+    gui.display().mainloop()
     # tk主窗关闭后
     logging.info("main_win exit")
     return

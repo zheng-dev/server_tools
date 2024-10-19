@@ -341,17 +341,18 @@ def highlight_word(
     tag: int = 0
     for word, color, gColor in wordColor:
         startIndex = "1.0"
+        wLen: int = len(word)
         tag += 1
         tagS: str = int(tag)
+        s.tag_config(tagS, foreground=color, background=gColor)
         while True:
             startIndex = s.search(word, startIndex, pos)
             if not startIndex:
                 break
             # 通过计算单词长度确定结束位置
-            endIndex = s.index(f"{startIndex}+{len(word)}c")
+            endIndex = s.index(f"{startIndex}+{wLen}c")
             # 添加标记
             s.tag_add(tagS, startIndex, endIndex)
-            s.tag_config(tagS, foreground=color, background=gColor)
             # 移动到文本的下一个部分
             startIndex = endIndex
     s.tag_raise("sel")  # 使选择突出显示始终位于顶部

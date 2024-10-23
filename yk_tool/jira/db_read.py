@@ -196,7 +196,15 @@ def main():
             self.valText.pack(pady=12)
             # 显示表bin内容
             # width，如果你设置width=50，那么意味着ScrolledText组件的宽度大约可以容纳50个字符。这些字符是指在组件的默认字体和字号下的“0”这样的标准字符。因此，实际的像素宽度将取决于所使用的字体和屏幕的显示设置
-            self.txtCont = scrolledtext.ScrolledText(self, width=80, height=30)
+            self.txtCont = scrolledtext.ScrolledText(
+                self, width=80, height=30, wrap="none"
+            )
+            hscroll = tkinter.Scrollbar(
+                self, orient=tkinter.HORIZONTAL, command=self.txtCont.xview
+            )
+
+            self.txtCont.configure(xscrollcommand=hscroll.set)
+            hscroll.pack(side="bottom", fill=tkinter.X)
             tkinter.Button(self.top, text="打开表文件", command=self.fOTab).pack(
                 side="left"
             )

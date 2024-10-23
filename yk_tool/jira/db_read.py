@@ -167,6 +167,8 @@ def main():
     logging.info("main start")
 
     class DbWindow(tkinter.Tk):
+        size = 1024
+
         def __init__(self):
             super().__init__()
             self.title("yk db表数据")  # #窗口标题
@@ -297,24 +299,44 @@ def main():
             sp.sort()
             self.txtCont.config()
             self.txtCont.delete(1.0, tkinter.END)
+            accStr: str = ""
+            logging.info(f"read start1")
             for selP in sp:
-                self.txtCont.insert(tkinter.CURRENT, f"\n===={selP}=====\n")
-                termStr = self.binFile.open(selP).get_row()
-                self.txtCont.insert(tkinter.CURRENT, termStr)
-            wordColor: list = [
-                ("val", "red", ""),
-                ("key", "red", ""),
-                ("vsn", "red", ""),
-                ("row_num", "red", ""),
-                ("Atom", "blue", ""),
-                ("Binary", "blue", ""),
-                ("List", "blue", ""),
-                ("Pid", "blue", ""),
-                ("Port", "blue", ""),
-                ("Reference", "blue", ""),
-                ("Function", "blue", ""),
-            ]
-            highlight_word(wordColor, self.txtCont, tkinter.END)
+                # self.txtCont.insert(tkinter.CURRENT, f"\n===={selP}=====\n")
+                accStr += f"\n===={selP}=====\n" + self.binFile.open(selP).get_row()
+
+            logging.info(f"read start2a")
+            # 单行大数据会卡--ScrolledText性能现状
+            lineNum: int = accStr.count("\n")
+            if len(accStr) // lineNum > DbWindow.size:
+                import os
+
+                tab = os.path.basename(os.path.dirname(os.path.dirname(sp[0])))
+                with open(f".{tab}.json", "w") as f:
+                    f.write(accStr)
+                    f.flush()
+
+                self.txtCont.insert(
+                    tkinter.CURRENT,
+                    f"单条有大数据，请打开\n{os.getcwd()}{os.sep}.{tab}.json\n查看",
+                )
+            else:
+                self.txtCont.insert(tkinter.CURRENT, accStr)
+                wordColor: list = [
+                    ("val", "red", ""),
+                    ("key", "red", ""),
+                    ("vsn", "red", ""),
+                    ("row_num", "red", ""),
+                    ("Atom", "blue", ""),
+                    # ("Binary", "blue", ""),
+                    # ("List", "blue", ""),
+                    # ("Pid", "blue", ""),
+                    # ("Port", "blue", ""),
+                    # ("Reference", "blue", ""),
+                    # ("Function", "blue", ""),
+                ]
+                highlight_word(wordColor, self.txtCont, tkinter.END)
+            logging.info(f"read start2")
 
         # 显示保存界面
         def disp_save(self):

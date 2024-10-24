@@ -10,6 +10,7 @@ from tkinter.filedialog import *
 import logging, struct
 from datetime import *
 from tkinter import scrolledtext
+import ahocorasick
 
 
 if __name__ == "__main__":
@@ -26,54 +27,49 @@ class BinFile:
     """开关bin文件的上下文件用"""
 
     def __init__(self) -> None:
-        self.fileName: str = ""
-        self.fileHand = None
-        """文件句柄"""
-        self.hash = 0  # 原串hash
+        pass
 
     def __del__(self):
         self.do_close()
         logging.info(f"{self.fileHand} close")
 
-    def open(self, file: str):
-        if len(self.fileName) > 0 and self.fileName != file:
-            self.fileHand.close()
-        self.fileName = file
-        self.fileHand = open(file, "rb+")
-        return self
+    def open_read(self, file: str) -> str:
+        with open(file, "rb") as f:
+            return self.get_row(f)
+        return ""
 
-    def get_row(self) -> str:
+    def get_row(self, fileHand) -> str:
         """取出N条数据\n已经格式化成str\n多条以换行分隔"""
         # TODO 定长文件格式为：[2字节键长+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
         # TODO 变长文件格式为：[4字节块长+2字节键长（0表示空块）+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
         # steam文件格式为：[4字节块长+2字节键长（0表示空块）+键数据+2字节血源+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
         termStr = ""
-        self.fileHand.seek(0)
+        fileHand.seek(0)
         row_num = 0  # 行计数
         while True:
-            b = self.fileHand.read(4)
+            b = fileHand.read(4)
             if len(b) != 4:
                 break
-            kl = self.fileHand.read(2)
+            kl = fileHand.read(2)
             # (block_size,) = struct.unpack(b">I", b)
             (key_len_num,) = struct.unpack(b">H", kl)
             row_num += 1
             if key_len_num == 0:
                 # 空块,加位移
                 break
-            k_txt = self.fileHand.read(key_len_num)
+            k_txt = fileHand.read(key_len_num)
             logging.debug(f"bnum:{b},k-len:{kl},k:{k_txt}")
             key = binary_to_term(k_txt)
             (
                 src,
                 vsn,
-            ) = struct.unpack(b">HI", self.fileHand.read(6))
-            (t1,) = struct.unpack(b">Q", bytes([0, 0]) + self.fileHand.read(6))
-            (val_len,) = struct.unpack(b">I", self.fileHand.read(4))
+            ) = struct.unpack(b">HI", fileHand.read(6))
+            (t1,) = struct.unpack(b">Q", bytes([0, 0]) + fileHand.read(6))
+            (val_len,) = struct.unpack(b">I", fileHand.read(4))
 
             # print(val_len, key_len_num, vsn, t1)
 
-            bContext = self.fileHand.read(val_len)
+            bContext = fileHand.read(val_len)
 
             if len(bContext) > 0:
                 try:
@@ -303,7 +299,7 @@ def main():
             logging.info(f"read start1")
             for selP in sp:
                 # self.txtCont.insert(tkinter.CURRENT, f"\n===={selP}=====\n")
-                accStr += f"\n===={selP}=====\n" + self.binFile.open(selP).get_row()
+                accStr += f"\n===={selP}=====\n" + self.binFile.open_read(selP)
 
             logging.info(f"read start2a")
             # 单行大数据会卡--ScrolledText性能现状
@@ -367,24 +363,29 @@ def main():
 def highlight_word(
     wordColor: list[tuple[str, str, str]], s: scrolledtext.ScrolledText, pos: int
 ):
-    # txtCont.tag_remove(tag, "1.0", tkinter.END)
-    tag: int = 0
-    for word, color, gColor in wordColor:
-        startIndex = "1.0"
-        wLen: int = len(word)
-        tag += 1
-        tagS: str = int(tag)
+    A = ahocorasick.Automaton()
+
+    for idx, (word, color, gColor) in enumerate(wordColor):
+        A.add_word(word, (idx, word, color, gColor))
+    A.make_automaton()
+
+    # 清理所有之前的标记
+    s.tag_remove("highlight", "1.0", "end")
+
+    # 配置新的标记样式
+    for idx, (_, color, gColor) in enumerate(wordColor):
+        tagS = f"highlight_{idx}"
         s.tag_config(tagS, foreground=color, background=gColor)
-        while True:
-            startIndex = s.search(word, startIndex, pos)
-            if not startIndex:
-                break
-            # 通过计算单词长度确定结束位置
-            endIndex = s.index(f"{startIndex}+{wLen}c")
-            # 添加标记
-            s.tag_add(tagS, startIndex, endIndex)
-            # 移动到文本的下一个部分
-            startIndex = endIndex
+
+    # 在文本中查找所有的词并标记
+    text = s.get("1.0", "end-1c")
+    for end_index, (idx, word, color, gColor) in A.iter(text):
+        start_index = end_index - len(word) + 1
+        start_index_tk = f"1.0 + {start_index} chars"
+        end_index_tk = f"1.0 + {end_index + 1} chars"
+        tagS = f"highlight_{idx}"
+        s.tag_add(tagS, start_index_tk, end_index_tk)
+
     s.tag_raise("sel")  # 使选择突出显示始终位于顶部
 
 

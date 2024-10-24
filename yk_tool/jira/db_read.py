@@ -35,6 +35,7 @@ class BinFile:
         logging.info(f"{self.fileHand} close")
 
     def open_read(self, file: str) -> str:
+        self.fileName: str = file  # 表追加kv时要用此找目录
         with open(file, "rb") as f:
             return self.get_row(f)
         return ""

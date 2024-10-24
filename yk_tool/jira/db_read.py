@@ -5,6 +5,7 @@
 # Date: 2024-09-29
 # decription: db增量bin的读、增
 
+from io import FileIO
 from erlang import *
 from tkinter.filedialog import *
 import logging, struct
@@ -38,7 +39,7 @@ class BinFile:
             return self.get_row(f)
         return ""
 
-    def get_row(self, fileHand) -> str:
+    def get_row(self, fileHand: FileIO) -> str:
         """取出N条数据\n已经格式化成str\n多条以换行分隔"""
         # TODO 定长文件格式为：[2字节键长+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
         # TODO 变长文件格式为：[4字节块长+2字节键长（0表示空块）+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]

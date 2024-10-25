@@ -72,26 +72,24 @@ class BinFile:
             # print(val_len, key_len_num, vsn, t1)
 
             bContext = fileHand.read(val_len)
-
-            if len(bContext) > 0:
-                try:
+            try:
+                if len(bContext) > 0:
                     r = binary_to_term(bContext)
-                    t = datetime.fromtimestamp(t1 // 1000)
-                    ext_info: dict = {
-                        "vsn": vsn,
-                        "key": key,
-                        "val": r,
-                        "src": src,
-                        "time": str(t) + str(t1 % 1000),
-                        "row_num": row_num,
-                    }
-                    termStr += str(ext_info) + "\n\n"
-                except:
-                    logging.error(f"bin_err:{bContext}")
-                    termStr += "\nbin_err"
-            else:
-                termStr += "\nno data"
-                break
+                else:
+                    r = None  # 此key已经del
+                t = datetime.fromtimestamp(t1 // 1000)
+                ext_info: dict = {
+                    "vsn": vsn,
+                    "key": key,
+                    "val": r,
+                    "src": src,
+                    "time": str(t) + str(t1 % 1000),
+                    "row_num": row_num,
+                }
+                termStr += str(ext_info) + "\n\n"
+            except:
+                logging.error(f"bin_err:{bContext}")
+                termStr += "\nbin_err"
 
         self.hash = hash(termStr)
         return termStr
@@ -165,7 +163,8 @@ def main():
     logging.info("main start")
 
     class DbWindow(tkinter.Tk):
-        size = 1024
+        size: int = 1024
+        lineNum: int = 2000
 
         def __init__(self):
             super().__init__()
@@ -303,10 +302,10 @@ def main():
                 # self.txtCont.insert(tkinter.CURRENT, f"\n===={selP}=====\n")
                 accStr += f"\n===={selP}=====\n" + self.binFile.open_read(selP)
 
-            logging.info(f"read start2a")
             # 单行大数据会卡--ScrolledText性能现状
             lineNum: int = accStr.count("\n")
-            if len(accStr) // lineNum > DbWindow.size:
+            logging.info(f"read start2a  num={lineNum}")
+            if len(accStr) // lineNum > DbWindow.size or lineNum > DbWindow.lineNum:
                 import os
 
                 tab = os.path.basename(os.path.dirname(os.path.dirname(sp[0])))
@@ -316,7 +315,7 @@ def main():
 
                 self.txtCont.insert(
                     tkinter.CURRENT,
-                    f"单条有大数据，请打开\n{os.getcwd()}{os.sep}.{tab}.json\n查看",
+                    f"单条有大数据 或 总条数太多:{lineNum}，请打开\n{os.getcwd()}{os.sep}.{tab}.json\n查看",
                 )
             else:
                 self.txtCont.insert(tkinter.CURRENT, accStr)

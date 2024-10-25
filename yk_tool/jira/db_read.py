@@ -28,6 +28,7 @@ class BinFile:
     """开关bin文件的上下文件用"""
 
     def __init__(self) -> None:
+        self.fileName: str = None
         pass
 
     def __del__(self):
@@ -58,7 +59,7 @@ class BinFile:
             row_num += 1
             if key_len_num == 0:
                 # 空块,加位移
-                break
+                continue
             k_txt = fileHand.read(key_len_num)
             logging.debug(f"bnum:{b},k-len:{kl},k:{k_txt}")
             key = binary_to_term(k_txt)
@@ -94,7 +95,24 @@ class BinFile:
         self.hash = hash(termStr)
         return termStr
 
-    def save_rows(self, appendFile: str, key: bytes, val: bytes, src: int = 1001):
+    def get_max_id_file(self) -> str:
+        if self.fileName is None:
+            raise (Exception("must_select_tab"))
+        import os
+
+        tab: str = os.path.dirname(os.path.dirname(os.path.abspath(self.fileName)))
+        # os.chdir(tab)
+        dirl = os.listdir(tab)
+        dirl.sort()
+        dirl.reverse()
+        maxDir: str = f"{tab}{os.sep}{dirl[0]}"
+        fileL = os.listdir(maxDir)
+        fileL.sort()
+        fileL.reverse()
+        appendFile: str = f"{maxDir}{os.sep}{fileL[0]}"  # 在最新的文件追加
+        return appendFile
+
+    def save_rows(self, key: bytes, val: bytes, src: int = 1001):
         """追加块到文件"""
         # steam文件格式为：[4字节块长+2字节键长（0表示空块）+键数据+2字节血源+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
         vsize = len(val)
@@ -106,6 +124,7 @@ class BinFile:
         r += struct.pack(b">HI", src, 3)
         r += time[2:]  # 8byte变6
         r += struct.pack(b">I", vsize) + val
+        appendFile: str = self.get_max_id_file()
         with open(appendFile, "rb+") as f:
             f.seek(0, 2)  # 跳到文件末尾
             f.write(r)
@@ -244,8 +263,6 @@ def main():
 
         # 追加kv到表的最新bin文件中
         def save(self):
-            import os
-
             srcInput: str = self.valSrc.get(1.0, tkinter.END)
             key: str = self.valKey.get(1.0, tkinter.END)
             val: str = self.valText.get(1.0, tkinter.END)
@@ -253,29 +270,14 @@ def main():
                 return
             str_check(key)
             str_check(val)
-
-            tab: str = os.path.dirname(
-                os.path.dirname(os.path.abspath(self.binFile.fileName))
-            )
+            keyBin = parse(key)
+            valBin = parse(val)
             try:
-                os.chdir(tab)
-                dirl = os.listdir(".")
-                dirl.sort()
-                dirl.reverse()
-                os.chdir(dirl[0])
-                fileL = os.listdir(".")
-                fileL.sort()
-                fileL.reverse()
-                appendFile: str = fileL[0]  # 在最新的文件追加
+                self.binFile.save_rows(keyBin, valBin, src=int(srcInput))
+            except Exception as a:
+                t_box.showinfo("err", f"错误:{a.args}")
+                pass
 
-                keyBin = parse(key)
-                valBin = parse(val)
-                self.binFile.save_rows(appendFile, keyBin, valBin, src=int(srcInput))
-
-                t_box.showinfo("sucess", "操作成功")
-                # print(tab, fileL[0], key, keyBin, valBin)
-            finally:
-                os.chdir(os.path.dirname(os.path.abspath(self.binFile.fileName)))
             self.dis = False
             self.valKey.delete(1.0, tkinter.END)
             self.valSrc.delete(1.0, tkinter.END)
@@ -325,7 +327,7 @@ def main():
                     ("vsn", "red", ""),
                     ("row_num", "red", ""),
                     ("Atom", "blue", ""),
-                    # ("Binary", "blue", ""),
+                    ("Binary", "blue", ""),
                     # ("List", "blue", ""),
                     # ("Pid", "blue", ""),
                     # ("Port", "blue", ""),

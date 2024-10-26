@@ -5,14 +5,13 @@
 # Date: 2024-09-29
 # decription: db增量bin的读、增
 
+import logging, struct, ahocorasick
 from io import FileIO
 from erlang import *
-from tkinter.filedialog import *
-import logging, struct
 from datetime import *
-from tkinter import scrolledtext
-import ahocorasick
-
+from tkinter.scrolledtext import ScrolledText
+import tkinter, tkinter.messagebox as t_box, time
+from tkinter.filedialog import *
 
 if __name__ == "__main__":
     # 这里配置log必需在脚本最前面
@@ -29,11 +28,9 @@ class BinFile:
 
     def __init__(self) -> None:
         self.fileName: str = None
-        pass
 
     def __del__(self):
-        self.do_close()
-        logging.info(f"{self.fileHand} close")
+        logging.info("close")
 
     def open_read(self, file: str) -> str:
         self.fileName: str = file  # 表追加kv时要用此找目录
@@ -114,6 +111,7 @@ class BinFile:
 
     def save_rows(self, key: bytes, val: bytes, src: int = 1001):
         """追加块到文件"""
+        appendFile: str = self.get_max_id_file()
         # steam文件格式为：[4字节块长+2字节键长（0表示空块）+键数据+2字节血源+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
         vsize = len(val)
         ksize = len(key)
@@ -124,19 +122,15 @@ class BinFile:
         r += struct.pack(b">HI", src, 3)
         r += time[2:]  # 8byte变6
         r += struct.pack(b">I", vsize) + val
-        appendFile: str = self.get_max_id_file()
+
         with open(appendFile, "rb+") as f:
             f.seek(0, 2)  # 跳到文件末尾
             f.write(r)
             f.flush()
 
-    def do_close(self):
-        if self.fileHand is not None:
-            self.fileHand.close()
-
 
 def str_check(str1: str):
-    l = ["os.system(", "import "]
+    l = ["os.system(", "import ", "quit", "exit", "halt"]
     for i in l:
         if i in str1:
             raise (Exception("txt_illegal"))
@@ -149,14 +143,32 @@ def parse(str1: str):
     return term_to_binary(eval(str1))
 
 
-def diff_time(stime: str = "2024-11-03 20:46:00") -> int:
-    import time
+# 定义一个函数来着色指定的单词
+def highlight_word(wordColor: list[tuple[str, str, str]], s: ScrolledText):
+    A = ahocorasick.Automaton()
 
-    tFormat = "%Y-%m-%d %H:%M:%S"
-    dt = time.strptime(stime, tFormat)
-    utc = int(time.mktime(dt))
-    nowUtc = int(time.time())
-    return utc - nowUtc
+    for idx, (word, color, gColor) in enumerate(wordColor):
+        A.add_word(word, (idx, word, color, gColor))
+    A.make_automaton()
+
+    # 清理所有之前的标记
+    s.tag_remove("highlight", "1.0", "end")
+
+    # 配置新的标记样式
+    for idx, (_, color, gColor) in enumerate(wordColor):
+        tagS = f"highlight_{idx}"
+        s.tag_config(tagS, foreground=color, background=gColor)
+
+    # 在文本中查找所有的词并标记
+    text = s.get("1.0", "end-1c")
+    for end_index, (idx, word, color, gColor) in A.iter(text):
+        start_index = end_index - len(word) + 1
+        start_index_tk = f"1.0 + {start_index} chars"
+        end_index_tk = f"1.0 + {end_index + 1} chars"
+        tagS = f"highlight_{idx}"
+        s.tag_add(tagS, start_index_tk, end_index_tk)
+
+    s.tag_raise("sel")  # 使选择突出显示始终位于顶部
 
 
 ## 查找窗口
@@ -168,17 +180,142 @@ def find_window(findStr: str, matchStr: str):
     root.geometry("500x490+900+110")  # #窗口位置500后面是字母x
     root.lift()
 
-    text = scrolledtext.ScrolledText(root, width=80, height=5)
+    text = ScrolledText(root, width=80, height=5)
     text.insert(tkinter.CURRENT, matchStr)
     text.pack(pady=12, fill=tkinter.BOTH, expand=True)
-    highlight_word([(findStr, "white", "royalblue")], text, tkinter.END)
+    highlight_word([(findStr, "white", "royalblue")], text)
     pass
+
+
+## 时间工具
+class TimeToolWindow(tkinter.Tk):
+    GAME = "game>"
+    cmdHelp = f"可输入如下cmd运行:\n    按指定时间启服: {GAME}D:\\zzc\\game_alpha>2024-11-03 20:46:00\n    执行4则运算: 6+6"
+
+    def display(self):
+        self.logNum: int = 0
+        self.title("时间工具")
+        self.geometry("600x400")
+
+        row1 = tkinter.Frame(self, height=3)
+        self.timeTxt = tkinter.Text(row1, height=1, width=20)
+        self.timeTxt.insert(1.0, "2024-11-03 20:46:00")
+        self.timeTxt.pack(side="left")
+        tkinter.Button(row1, text="转utc", command=self.to_utc).pack(
+            side="left", anchor="w", padx=5
+        )
+        tkinter.Button(row1, text="当前utc", command=self.now_utc).pack(
+            side="left", anchor="w", padx=5
+        )
+        row1.pack(fill=tkinter.BOTH, padx=5)
+
+        row2 = tkinter.Frame(self, height=3)
+        self.timeUtc = tkinter.Text(row2, height=1, width=20)
+        self.timeUtc.insert(1.0, f"{time.time()}")
+        self.timeUtc.pack(side="left")
+        tkinter.Button(row2, text="转本地时间", command=self.to_local).pack(
+            side="left", anchor="w", padx=5
+        )
+        row2.pack(fill=tkinter.BOTH, padx=5, pady=5)
+
+        row3 = tkinter.Frame(self, height=3)
+        self.cmdTxt = tkinter.Text(row3, height=1, width=60)
+        self.cmdTxt.insert(1.0, "help")
+        self.cmdTxt.tag_bind("sel", "<ButtonRelease-1>", self.on_select)
+        self.cmdTxt.pack(side="left")
+        tkinter.Button(row3, text="执行cmd", command=self.cmd2).pack(
+            side="left", anchor="w", padx=5
+        )
+        row3.pack(fill=tkinter.BOTH, padx=5)
+
+        self.log = ScrolledText(self)
+        self.log.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
+
+    def on_select(self, e):
+        pass
+
+    def cmd2(self):
+        cmdStr: str = self.cmdTxt.get(1.0, tkinter.END).strip()
+        self.logNum += 1
+        if cmdStr == "help":
+            rets = self.cmdHelp + "\n"
+        elif cmdStr.startswith(self.GAME):
+            rets = f"start>{self.time_start_game(cmdStr)}\n"
+        else:
+            try:
+                str_check(cmdStr)
+                rets: str = f"{eval(cmdStr)}\n"
+            except Exception as a:
+                rets: str = f"err:{a.args}"
+        rets: str = f"{self.logNum}>> cmd_ret --> {rets}\n"
+        self.log.insert(tkinter.CURRENT, rets)
+
+    def time_start_game(self, cmdStr: str) -> str:
+        r = cmdStr.split(">")
+        if len(r) != 3:
+            return "格式错误"
+        else:
+            import os, sys
+
+            [_c, gPath, timeStr] = r
+            try:
+                files = os.listdir(gPath)
+                if "db" not in files or "boot" not in files:
+                    return "游戏目录错误"
+            except:
+                return "找不到目录"
+            defference = 0
+            try:
+                tFormat = "%Y-%m-%d %H:%M:%S"
+                dt = time.strptime(timeStr, tFormat)
+                utc = int(time.mktime(dt))
+                defference = utc - int(time.time())
+            except:
+                return f"time_err:{time}"
+
+            s = os.sep
+            # 改表
+            try:
+                binFile = BinFile()
+                # 已知规则取巧拼接目录
+                binFile.fileName = f"{gPath}{s}db{s}ut{s}time{s}00000{s}00000"
+                keyBin = parse("0")  # 固定
+                valBin = parse(str(defference))
+                binFile.save_rows(keyBin, valBin, src=0)
+            except Exception as a:
+                return f"改表时间失败-{a.args}"
+            # 启服
+            if sys.platform.startswith("win"):
+                os.chdir(f"{gPath}{s}boot")
+                os.system("start.bat")
+            return "操作成功"
+
+    def to_utc(self):
+        self.logNum += 1
+        stime: str = self.timeTxt.get(1.0, tkinter.END).strip()
+
+        tFormat = "%Y-%m-%d %H:%M:%S"
+        dt = time.strptime(stime, tFormat)
+        utc = int(time.mktime(dt))
+        rets: str = f"{self.logNum}>> {stime} --> {utc}\n\n"
+        self.log.insert(tkinter.CURRENT, rets)
+
+    def now_utc(self):
+        self.logNum += 1
+        rets: str = f"{self.logNum}>> now --> {time.time()}\n\n"
+        self.log.insert(tkinter.CURRENT, rets)
+
+    def to_local(self):
+        self.logNum += 1
+        stime: str = self.timeUtc.get(1.0, tkinter.END).strip()
+        t = int(float(stime))
+        utc = datetime.fromtimestamp(t)  # int(time.mktime(dt))
+        rets: str = f"{self.logNum}>> {stime} --> {utc}\n\n"
+        self.log.insert(tkinter.CURRENT, rets)
 
 
 ##
 def main():
-    import tkinter, tkinter.messagebox as t_box
-
     logging.info("main start")
 
     class DbWindow(tkinter.Tk):
@@ -188,7 +325,7 @@ def main():
         def __init__(self):
             super().__init__()
             self.title("yk db表数据")  # #窗口标题
-            self.geometry("600x490+900+110")  # #窗口位置500后面是字母x
+            self.geometry("600x490+500+110")  # #窗口位置500后面是字母x
             self.binPath: str = ""
             self.binFile = BinFile()
             self.dis: bool = False
@@ -206,17 +343,15 @@ def main():
             # 保存表kv
             self.addFram = tkinter.Frame(self, width=250, height=30)
             self.valSrc = tkinter.Text(self.addFram, width=20, height=1)
-            self.valKey = scrolledtext.ScrolledText(self.addFram, width=80, height=1)
-            self.valText = scrolledtext.ScrolledText(self.addFram, width=80, height=5)
+            self.valKey = ScrolledText(self.addFram, width=80, height=1)
+            self.valText = ScrolledText(self.addFram, width=80, height=5)
             tkinter.Button(self.addFram, text="追加kv到表", command=self.save).pack()
             self.valSrc.pack(side="top", pady=12, anchor="w")
             self.valKey.pack()
             self.valText.pack(pady=12)
             # 显示表bin内容
             # width，如果你设置width=50，那么意味着ScrolledText组件的宽度大约可以容纳50个字符。这些字符是指在组件的默认字体和字号下的“0”这样的标准字符。因此，实际的像素宽度将取决于所使用的字体和屏幕的显示设置
-            self.txtCont = scrolledtext.ScrolledText(
-                self, width=80, height=30, wrap="none"
-            )
+            self.txtCont = ScrolledText(self, wrap="none")
             hscroll = tkinter.Scrollbar(
                 self, orient=tkinter.HORIZONTAL, command=self.txtCont.xview
             )
@@ -229,12 +364,10 @@ def main():
             tkinter.Button(self.top, text="表追加存kv", command=self.disp_save).pack(
                 side="left", padx=10
             )
-            tkinter.Button(self.top, text="计算时间", command=self.time_ok1).pack(
+            tkinter.Button(self.top, text="时间工具", command=self.time_tool).pack(
                 side="left"
             )
-            self.timeTxt = tkinter.Text(self.top, height=1, width=47)
-            self.timeTxt.insert(1.0, "2024-11-03 20:46:00减系统当前时间的秒数差")
-            self.timeTxt.pack(pady=12)
+
             self.top.pack(anchor="w", ipadx=10, padx=5)
             self.labTabBin = tkinter.Label(
                 self, text="--------------------------------------"
@@ -268,11 +401,11 @@ def main():
             val: str = self.valText.get(1.0, tkinter.END)
             if "放入key串\n" == key or "放入value串\n" == val:
                 return
-            str_check(key)
-            str_check(val)
-            keyBin = parse(key)
-            valBin = parse(val)
             try:
+                str_check(key)
+                str_check(val)
+                keyBin = parse(key)
+                valBin = parse(val)
                 self.binFile.save_rows(keyBin, valBin, src=int(srcInput))
             except Exception as a:
                 t_box.showinfo("err", f"错误:{a.args}")
@@ -334,7 +467,7 @@ def main():
                     # ("Reference", "blue", ""),
                     # ("Function", "blue", ""),
                 ]
-                highlight_word(wordColor, self.txtCont, tkinter.END)
+                highlight_word(wordColor, self.txtCont)
             logging.info(f"read start2")
 
         # 显示保存界面
@@ -346,50 +479,21 @@ def main():
                 self.valText.insert(1.0, "放入value串")
                 self.addFram.pack(after=self.labTabBin)
 
-        # 计算目标时间到当前时间的秒数差
-        def time_ok1(self):
-            v = self.timeTxt.get(1.0, tkinter.END)
-            self.timeTxt.delete(1.0, tkinter.END)
-            if len(v) < 19:
-                return
-            secondstr = diff_time(v[0:19])
-            self.timeTxt.insert(1.0, str(secondstr))
+        # 打开时间工具
+        def time_tool(self):
+            TimeToolWindow().display()
+            # v = self.timeTxt.get(1.0, tkinter.END)
+            # self.timeTxt.delete(1.0, tkinter.END)
+            # if len(v) < 19:
+            #     return
+            # secondstr = diff_time(v[0:19])
+            # self.timeTxt.insert(1.0, str(secondstr))
 
     gui = DbWindow()
     gui.display().mainloop()
 
     # tk主窗关闭后
     logging.info("main end")
-
-
-# 定义一个函数来着色指定的单词
-def highlight_word(
-    wordColor: list[tuple[str, str, str]], s: scrolledtext.ScrolledText, pos: int
-):
-    A = ahocorasick.Automaton()
-
-    for idx, (word, color, gColor) in enumerate(wordColor):
-        A.add_word(word, (idx, word, color, gColor))
-    A.make_automaton()
-
-    # 清理所有之前的标记
-    s.tag_remove("highlight", "1.0", "end")
-
-    # 配置新的标记样式
-    for idx, (_, color, gColor) in enumerate(wordColor):
-        tagS = f"highlight_{idx}"
-        s.tag_config(tagS, foreground=color, background=gColor)
-
-    # 在文本中查找所有的词并标记
-    text = s.get("1.0", "end-1c")
-    for end_index, (idx, word, color, gColor) in A.iter(text):
-        start_index = end_index - len(word) + 1
-        start_index_tk = f"1.0 + {start_index} chars"
-        end_index_tk = f"1.0 + {end_index + 1} chars"
-        tagS = f"highlight_{idx}"
-        s.tag_add(tagS, start_index_tk, end_index_tk)
-
-    s.tag_raise("sel")  # 使选择突出显示始终位于顶部
 
 
 if __name__ == "__main__":

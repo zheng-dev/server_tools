@@ -128,6 +128,42 @@ class BinFile:
             f.write(r)
             f.flush()
 
+    def start_time_server(self, gPath: str, timeStr: str) -> str:
+        import os, sys
+
+        try:
+            files = os.listdir(gPath)
+            if "db" not in files or "boot" not in files:
+                return "游戏目录错误"
+        except:
+            return "找不到目录"
+        defference = 0
+        try:
+            tFormat = "%Y-%m-%d %H:%M:%S"
+            dt = time.strptime(timeStr, tFormat)
+            utc = int(time.mktime(dt))
+            defference = utc - int(time.time())
+        except:
+            return f"time_err:{time}"
+
+        s = os.sep
+        # 改表
+        try:
+            # 已知规则取巧拼接目录
+            self.fileName = f"{gPath}{s}db{s}ut{s}time{s}00000{s}00000"
+            keyBin = parse("0")  # 固定
+            valBin = parse(str(defference))
+            self.save_rows(keyBin, valBin, src=0)
+        except Exception as a:
+            return f"改表时间失败-{a.args}"
+        # 启服
+        if sys.platform.startswith("win"):
+            os.chdir(f"{gPath}{s}boot")
+            os.system("start.bat")
+            return "操作成功"
+        else:
+            return "时间修改成功-非window系统,需手动启动"
+
 
 def str_check(str1: str):
     l = ["os.system(", "import ", "quit", "exit", "halt"]
@@ -219,9 +255,9 @@ class TimeToolWindow(tkinter.Tk):
         row2.pack(fill=tkinter.BOTH, padx=5, pady=5)
 
         row3 = tkinter.Frame(self, height=3)
-        self.cmdTxt = tkinter.Text(row3, height=1, width=60)
-        self.cmdTxt.insert(1.0, "help")
-        self.cmdTxt.tag_bind("sel", "<ButtonRelease-1>", self.on_select)
+        self.cmdTxt = tkinter.Entry(row3, width=60)
+        self.cmdTxt.insert(tkinter.END, "help")
+        self.cmdTxt.bind("<FocusIn>", self.on_select)
         self.cmdTxt.pack(side="left")
         tkinter.Button(row3, text="执行cmd", command=self.cmd2).pack(
             side="left", anchor="w", padx=5
@@ -232,10 +268,12 @@ class TimeToolWindow(tkinter.Tk):
         self.log.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
 
     def on_select(self, e):
-        pass
+        l = len(self.cmdTxt.get())
+        self.cmdTxt.select_from(0)
+        self.cmdTxt.select_to(l)
 
     def cmd2(self):
-        cmdStr: str = self.cmdTxt.get(1.0, tkinter.END).strip()
+        cmdStr: str = self.cmdTxt.get().strip()
         self.logNum += 1
         if cmdStr == "help":
             rets = self.cmdHelp + "\n"
@@ -255,40 +293,8 @@ class TimeToolWindow(tkinter.Tk):
         if len(r) != 3:
             return "格式错误"
         else:
-            import os, sys
-
             [_c, gPath, timeStr] = r
-            try:
-                files = os.listdir(gPath)
-                if "db" not in files or "boot" not in files:
-                    return "游戏目录错误"
-            except:
-                return "找不到目录"
-            defference = 0
-            try:
-                tFormat = "%Y-%m-%d %H:%M:%S"
-                dt = time.strptime(timeStr, tFormat)
-                utc = int(time.mktime(dt))
-                defference = utc - int(time.time())
-            except:
-                return f"time_err:{time}"
-
-            s = os.sep
-            # 改表
-            try:
-                binFile = BinFile()
-                # 已知规则取巧拼接目录
-                binFile.fileName = f"{gPath}{s}db{s}ut{s}time{s}00000{s}00000"
-                keyBin = parse("0")  # 固定
-                valBin = parse(str(defference))
-                binFile.save_rows(keyBin, valBin, src=0)
-            except Exception as a:
-                return f"改表时间失败-{a.args}"
-            # 启服
-            if sys.platform.startswith("win"):
-                os.chdir(f"{gPath}{s}boot")
-                os.system("start.bat")
-            return "操作成功"
+            return BinFile().start_time_server(gPath, timeStr)
 
     def to_utc(self):
         self.logNum += 1

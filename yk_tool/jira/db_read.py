@@ -116,8 +116,8 @@ class BinFile:
         vsize = len(val)
         ksize = len(key)
         blockSize = 22 - 4 + vsize + ksize  # 去掉4字节块长
-        # db加载用的时间最新的 2064-10-11 11:03:58
-        time = struct.pack(b">Q", 2990919838000)
+        # db加载用的时间最新的
+        time = struct.pack(b">Q", now_second() * 1000)
         r = struct.pack(b">IH", blockSize, ksize) + key
         r += struct.pack(b">HI", src, 3)
         r += time[2:]  # 8byte变6
@@ -163,6 +163,10 @@ class BinFile:
             return "操作成功"
         else:
             return "时间修改成功-非window系统,需手动启动"
+
+
+def now_second() -> int:
+    return int(time.time())
 
 
 def str_check(str1: str):
@@ -488,12 +492,6 @@ def main():
         # 打开时间工具
         def time_tool(self):
             TimeToolWindow().display()
-            # v = self.timeTxt.get(1.0, tkinter.END)
-            # self.timeTxt.delete(1.0, tkinter.END)
-            # if len(v) < 19:
-            #     return
-            # secondstr = diff_time(v[0:19])
-            # self.timeTxt.insert(1.0, str(secondstr))
 
     gui = DbWindow()
     gui.display().mainloop()

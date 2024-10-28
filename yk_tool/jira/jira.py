@@ -225,7 +225,7 @@ def main():
         def display(self):
             self.title("jira")  # #窗口标题
             self.geometry("260x210+900+110")  # #窗口位置500后面是字母x
-            self.lift()
+            self.attributes("-topmost", 1)
             self.resizable(False, False)
 
             self.l1 = scrolledtext.ScrolledText(self, height=20, width=38)

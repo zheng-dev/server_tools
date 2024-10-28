@@ -183,6 +183,13 @@ def parse(str1: str):
     return term_to_binary(eval(str1))
 
 
+# 点击时选中内容方便覆盖
+def on_select(e, Ele: tkinter.Entry):
+    l = len(Ele.get())
+    Ele.select_from(0)
+    Ele.select_to(l)
+
+
 # 定义一个函数来着色指定的单词
 def highlight_word(wordColor: list[tuple[str, str, str]], s: ScrolledText):
     A = ahocorasick.Automaton()
@@ -250,8 +257,9 @@ class TimeToolWindow(tkinter.Tk):
         row1.pack(fill=tkinter.BOTH, padx=5)
 
         row2 = tkinter.Frame(self, height=3)
-        self.timeUtc = tkinter.Text(row2, height=1, width=20)
-        self.timeUtc.insert(1.0, f"{time.time()}")
+        self.timeUtc = tkinter.Entry(row2, width=20)
+        self.timeUtc.insert(tkinter.END, f"{time.time()}")
+        self.timeUtc.bind("<FocusIn>", lambda e: on_select(e, self.timeUtc))
         self.timeUtc.pack(side="left")
         tkinter.Button(row2, text="转本地时间", command=self.to_local).pack(
             side="left", anchor="w", padx=5
@@ -261,7 +269,7 @@ class TimeToolWindow(tkinter.Tk):
         row3 = tkinter.Frame(self, height=3)
         self.cmdTxt = tkinter.Entry(row3, width=60)
         self.cmdTxt.insert(tkinter.END, "help")
-        self.cmdTxt.bind("<FocusIn>", self.on_select)
+        self.cmdTxt.bind("<FocusIn>", lambda e: on_select(e, self.cmdTxt))
         self.cmdTxt.pack(side="left")
         tkinter.Button(row3, text="执行cmd", command=self.cmd2).pack(
             side="left", anchor="w", padx=5
@@ -270,11 +278,6 @@ class TimeToolWindow(tkinter.Tk):
 
         self.log = ScrolledText(self)
         self.log.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
-
-    def on_select(self, e):
-        l = len(self.cmdTxt.get())
-        self.cmdTxt.select_from(0)
-        self.cmdTxt.select_to(l)
 
     def cmd2(self):
         cmdStr: str = self.cmdTxt.get().strip()
@@ -317,7 +320,7 @@ class TimeToolWindow(tkinter.Tk):
 
     def to_local(self):
         self.logNum += 1
-        stime: str = self.timeUtc.get(1.0, tkinter.END).strip()
+        stime: str = self.timeUtc.get().strip()
         t = int(float(stime))
         utc = datetime.fromtimestamp(t)  # int(time.mktime(dt))
         rets: str = f"{self.logNum}>> {stime} --> {utc}\n\n"
@@ -346,8 +349,9 @@ def main():
             self.findFram = tkinter.Frame(self, width=250, height=30)
             self.fB = tkinter.Button(self.findFram, command=self.find, text="查找")
             self.fB.pack(side="left", padx=3)
-            self.matchStr = tkinter.Text(self.findFram, width=20, height=1)
-            self.matchStr.insert(1.0, "输入查找字符")
+            self.matchStr = tkinter.Entry(self.findFram, width=20)
+            self.matchStr.insert(tkinter.END, "输入查找字符")
+            self.matchStr.bind("<FocusIn>", lambda e: on_select(e, self.matchStr))
             self.matchStr.pack(side="left", pady=10, padx=5, after=self.fB)
 
             # 保存表kv
@@ -390,12 +394,11 @@ def main():
             self.txtCont.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
             return self
 
-        # 保存
+        # 查找
         def find(self):
             allStr = self.txtCont.get(1.0, tkinter.END)
-            findStr: str = self.matchStr.get(1.0, tkinter.END)[:-1]  # 去掉系统加的\n
-            self.matchStr.delete(1.0, tkinter.END)
-            self.matchStr.insert(1.0, "输入查找字符")
+            findStr: str = self.matchStr.get()[:-1]  # 去掉系统加的\n
+            # self.matchStr.insert(tkinter.END, "输入查找字符")
             if findStr == "输入查找字符":
                 return
             retStr: str = ""

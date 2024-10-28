@@ -230,11 +230,16 @@ def main():
             self.l1 = scrolledtext.ScrolledText(self, height=20, width=38)
             self.l1.pack(side=tkinter.LEFT, fill="both", expand=True)
             self.after(10, self.update)
-            self.bind("<Escape>", self.hide)
+
             self.l1.bind("<Control-Button-1>", self.jira_info)
+            self.l1.bind("<Button-1>", self.read_flag)
             # 显示窗口-绑定全局快捷键
-            BindKey().hook(["alt", "q", "0"], self.deiconify)
+            # BindKey().hook(["alt", "q", "0"], self.deiconify)
+            # self.bind("<Escape>", self.hide)
             return self
+
+        def read_flag(self, e):
+            self.title("jira")
 
         def update(self):
             r: tuple[list[str], int] = self.jira.jira()
@@ -244,12 +249,13 @@ def main():
                     f"==%m/%d %H:%M:%S num:{len(r1)}==\n", time.localtime()
                 )
                 self.l1.insert(1.0, tStr + ("\n".join(r1)) + "\n")
+                self.title("new jira")
                 self.deiconify()
             self.after(ms, self.update)
 
-        # 隐藏
-        def hide(self, event):
-            self.withdraw()
+        # # 隐藏
+        # def hide(self, event):
+        #     self.withdraw()
 
         # 打开jira号的详情
         def jira_info(self, event):
@@ -263,34 +269,34 @@ def main():
     return
 
 
-##组合键
-import keyboard
+# ##组合键
+# import keyboard
 
 
-class BindKey:
-    def __init__(self) -> None:
-        self.__keys: list[str] = []
-        self.__onKeys: list[str] = []
-        self.__call = None
+# class BindKey:
+#     def __init__(self) -> None:
+#         self.__keys: list[str] = []
+#         self.__onKeys: list[str] = []
+#         self.__call = None
 
-    def __on_key(self, event: keyboard.KeyboardEvent):
-        if event.name in self.__keys and event.event_type == "up":
-            self.__onKeys.remove(event.name)
-        elif (
-            event.name in self.__keys
-            and event.event_type == "down"
-            and event.name not in self.__onKeys
-        ):
-            self.__onKeys.append(event.name)
-            self.__onKeys.sort()
-            if self.__keys == self.__onKeys:
-                self.__call()
+#     def __on_key(self, event: keyboard.KeyboardEvent):
+#         if event.name in self.__keys and event.event_type == "up":
+#             self.__onKeys.remove(event.name)
+#         elif (
+#             event.name in self.__keys
+#             and event.event_type == "down"
+#             and event.name not in self.__onKeys
+#         ):
+#             self.__onKeys.append(event.name)
+#             self.__onKeys.sort()
+#             if self.__keys == self.__onKeys:
+#                 self.__call()
 
-    def hook(self, keys: list[str], callback):
-        self.__call = callback
-        self.__keys = keys
-        self.__keys.sort()
-        keyboard.hook(self.__on_key)  # 锁屏回来也生效
+#     def hook(self, keys: list[str], callback):
+#         self.__call = callback
+#         self.__keys = keys
+#         self.__keys.sort()
+#         keyboard.hook(self.__on_key)  # 锁屏回来也生效
 
 
 if __name__ == "__main__":

@@ -150,7 +150,7 @@ class BinFile:
         # 改表
         try:
             # 已知规则取巧拼接目录
-            self.fileName = f"{gPath}{s}db{s}ut{s}time{s}00000{s}00000"
+            self.fileName = f"{gPath}{s}db{s}util{s}difference_time{s}00000{s}00000"
             keyBin = parse("0")  # 固定
             valBin = parse(str(defference))
             self.save_rows(keyBin, valBin, src=0)
@@ -158,8 +158,8 @@ class BinFile:
             return f"改表时间失败-{a.args}"
         # 启服
         if sys.platform.startswith("win"):
-            os.chdir(f"{gPath}{s}boot")
-            os.system("start.bat")
+            # os.chdir(f"{gPath}{s}boot")
+            os.system(f"cd /d {gPath}{s}boot{s} && start start.bat")
             return "操作成功"
         else:
             return "时间修改成功-非window系统,需手动启动"

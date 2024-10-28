@@ -397,8 +397,7 @@ def main():
         # 查找
         def find(self):
             allStr = self.txtCont.get(1.0, tkinter.END)
-            findStr: str = self.matchStr.get()[:-1]  # 去掉系统加的\n
-            # self.matchStr.insert(tkinter.END, "输入查找字符")
+            findStr: str = self.matchStr.get()
             if findStr == "输入查找字符":
                 return
             retStr: str = ""

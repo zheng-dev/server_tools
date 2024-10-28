@@ -217,16 +217,17 @@ def main():
     class JWindow(tkinter.Tk):
         def __init__(self):
             super().__init__()
-            self.title("jira")  # #窗口标题
-            self.geometry("260x210+900+110")  # #窗口位置500后面是字母x
-            self.lift()
-            self.resizable(False, False)
             #
             self.jira = MyJira.single()  # 时会创出event_loop
             self.jira.async_login()
             self.browseUrl = self.jira.cfg["browse"]
 
         def display(self):
+            self.title("jira")  # #窗口标题
+            self.geometry("260x210+900+110")  # #窗口位置500后面是字母x
+            self.lift()
+            self.resizable(False, False)
+
             self.l1 = scrolledtext.ScrolledText(self, height=20, width=38)
             self.l1.pack(side=tkinter.LEFT, fill="both", expand=True)
             self.after(10, self.update)

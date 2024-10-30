@@ -240,6 +240,7 @@ class TimeToolWindow(tkinter.Tk):
     cmdHelp = f"可输入如下cmd运行:\n    按指定时间启服: {GAME}D:\\zzc\\game_alpha>2024-11-03 20:46:00\n    执行4则运算: 6+6"
 
     def display(self):
+        self.dbL: list[DbWindow] = []
         self.logNum: int = 0
         self.title("时间工具")
         self.geometry("600x400")
@@ -254,7 +255,8 @@ class TimeToolWindow(tkinter.Tk):
         tkinter.Button(row1, text="当前utc", command=self.now_utc).pack(
             side="left", anchor="w", padx=5
         )
-        row1.pack(fill=tkinter.BOTH, padx=5)
+        tkinter.Button(row1, text="db工具", command=self.db_tool).pack(side="left")
+        row1.pack(fill=tkinter.BOTH, padx=15, ipadx=10)
 
         row2 = tkinter.Frame(self, height=3)
         self.timeUtc = tkinter.Entry(row2, width=20)
@@ -278,6 +280,9 @@ class TimeToolWindow(tkinter.Tk):
 
         self.log = ScrolledText(self)
         self.log.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
+
+        self.protocol("WM_DELETE_WINDOW", self.quit_any)  # 窗口点右叉时
+        return self
 
     def cmd2(self):
         cmdStr: str = self.cmdTxt.get().strip()
@@ -326,178 +331,185 @@ class TimeToolWindow(tkinter.Tk):
         rets: str = f"{self.logNum}>> {stime} --> {utc}\n\n"
         self.log.insert(tkinter.CURRENT, rets)
 
+    # 打开时间工具
+    def db_tool(self):
+        d = DbWindow()
+        self.dbL.append(d)
+        d.display()
+
+    def quit_any(self):
+        for d in self.dbL:
+            try:
+                d.destroy()
+            except:
+                pass
+        self.destroy()
+
+
+class DbWindow(tkinter.Tk):
+    size: int = 1024
+    lineNum: int = 2000
+
+    def __init__(self):
+        super().__init__()
+        self.title("yk db表数据")  # #窗口标题
+        self.geometry("600x490+500+110")  # #窗口位置500后面是字母x
+        self.binPath: str = ""
+        self.binFile = BinFile()
+        self.dis: bool = False
+        self.lift()
+
+    def display(self):
+        self.top = tkinter.Frame(self, width=250, height=30)
+        self.findFram = tkinter.Frame(self, width=250, height=30)
+        self.fB = tkinter.Button(self.findFram, command=self.find, text="查找")
+        self.fB.pack(side="left", padx=3)
+        self.matchStr = tkinter.Entry(self.findFram, width=20)
+        self.matchStr.insert(tkinter.END, "输入查找字符")
+        self.matchStr.bind("<FocusIn>", lambda e: on_select(e, self.matchStr))
+        self.matchStr.pack(side="left", pady=10, padx=5, after=self.fB)
+
+        # 保存表kv
+        self.addFram = tkinter.Frame(self, width=250, height=30)
+        self.valSrc = tkinter.Text(self.addFram, width=20, height=1)
+        self.valKey = ScrolledText(self.addFram, width=80, height=1)
+        self.valText = ScrolledText(self.addFram, width=80, height=5)
+        tkinter.Button(self.addFram, text="追加kv到表", command=self.save).pack()
+        self.valSrc.pack(side="top", pady=12, anchor="w")
+        self.valKey.pack()
+        self.valText.pack(pady=12)
+        # 显示表bin内容
+        # width，如果你设置width=50，那么意味着ScrolledText组件的宽度大约可以容纳50个字符。这些字符是指在组件的默认字体和字号下的“0”这样的标准字符。因此，实际的像素宽度将取决于所使用的字体和屏幕的显示设置
+        self.txtCont = ScrolledText(self, wrap="none")
+        hscroll = tkinter.Scrollbar(
+            self, orient=tkinter.HORIZONTAL, command=self.txtCont.xview
+        )
+
+        self.txtCont.configure(xscrollcommand=hscroll.set)
+        hscroll.pack(side="bottom", fill=tkinter.X)
+        tkinter.Button(self.top, text="打开表文件", command=self.fOTab).pack(
+            side="left"
+        )
+        tkinter.Button(self.top, text="表追加存kv", command=self.disp_save).pack(
+            side="left", padx=10
+        )
+
+        self.top.pack(anchor="w", ipadx=10, padx=5)
+        self.labTabBin = tkinter.Label(
+            self, text="--------------------------------------"
+        )
+        self.labTabBin.pack(side="top", anchor="w")
+        self.findFram.pack(side="top", fill="x", expand=False, padx=2)
+        self.txtCont.insert(1.0, "选择表-->选择增量目录-->打开增量bin文件(可多选)")
+
+        # 全屏填充
+        self.txtCont.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
+        return self
+
+    # 查找
+    def find(self):
+        allStr = self.txtCont.get(1.0, tkinter.END)
+        findStr: str = self.matchStr.get()
+        if findStr == "输入查找字符":
+            return
+        retStr: str = ""
+        for i in allStr.split("\n"):
+            if findStr in i:
+                retStr += f"{i}\n\n"
+        find_window(findStr, retStr)
+
+    # 追加kv到表的最新bin文件中
+    def save(self):
+        srcInput: str = self.valSrc.get(1.0, tkinter.END)
+        key: str = self.valKey.get(1.0, tkinter.END)
+        val: str = self.valText.get(1.0, tkinter.END)
+        if "放入key串\n" == key or "放入value串\n" == val:
+            return
+        try:
+            str_check(key)
+            str_check(val)
+            keyBin = parse(key)
+            valBin = parse(val)
+            self.binFile.save_rows(keyBin, valBin, src=int(srcInput))
+        except Exception as a:
+            t_box.showinfo("err", f"错误:{a.args}")
+            pass
+
+        self.dis = False
+        self.valKey.delete(1.0, tkinter.END)
+        self.valSrc.delete(1.0, tkinter.END)
+        self.valText.delete(1.0, tkinter.END)
+        self.addFram.pack_forget()
+
+    # 选表
+    def fOTab(self):
+        selBinPath: str = askopenfilenames(title="选择表bin文件(可多选)", initialdir="")
+        if len(selBinPath) == 0:
+            t_box.showinfo("err", "必需选择db增量bin")
+            return
+
+        # labTabBin.config(text=selBinPath)
+        sp: list = list(selBinPath)
+        sp.sort()
+        self.txtCont.config()
+        self.txtCont.delete(1.0, tkinter.END)
+        accStr: str = ""
+        logging.info(f"read start1")
+        for selP in sp:
+            # self.txtCont.insert(tkinter.CURRENT, f"\n===={selP}=====\n")
+            accStr += f"\n===={selP}=====\n" + self.binFile.open_read(selP)
+
+        # 单行大数据会卡--ScrolledText性能现状
+        lineNum: int = accStr.count("\n")
+        logging.info(f"read start2a  num={lineNum}")
+        if len(accStr) // lineNum > DbWindow.size or lineNum > DbWindow.lineNum:
+            import os
+
+            tab = os.path.basename(os.path.dirname(os.path.dirname(sp[0])))
+            with open(f".{tab}.json", "w") as f:
+                f.write(accStr)
+                f.flush()
+
+            self.txtCont.insert(
+                tkinter.CURRENT,
+                f"单条有大数据 或 总条数太多:{lineNum}，请打开\n{os.getcwd()}{os.sep}.{tab}.json\n查看",
+            )
+        else:
+            self.txtCont.insert(tkinter.CURRENT, accStr)
+            wordColor: list = [
+                ("val", "red", ""),
+                ("key", "red", ""),
+                ("vsn", "red", ""),
+                ("row_num", "red", ""),
+                ("Atom", "blue", ""),
+                ("Binary", "blue", ""),
+                # ("List", "blue", ""),
+                # ("Pid", "blue", ""),
+                # ("Port", "blue", ""),
+                # ("Reference", "blue", ""),
+                # ("Function", "blue", ""),
+            ]
+            highlight_word(wordColor, self.txtCont)
+        logging.info(f"read start2")
+
+    # 显示保存界面
+    def disp_save(self):
+        if not self.dis:
+            self.dis = True
+            self.valKey.insert(1.0, "放入key串")
+            self.valSrc.insert(1.0, "放入src整数")
+            self.valText.insert(1.0, "放入value串")
+            self.addFram.pack(after=self.labTabBin)
+
+
+# gui = DbWindow()
+# gui.display().mainloop()
+
 
 ##
 def main():
-    logging.info("main start")
-
-    class DbWindow(tkinter.Tk):
-        size: int = 1024
-        lineNum: int = 2000
-
-        def __init__(self):
-            super().__init__()
-            self.title("yk db表数据")  # #窗口标题
-            self.geometry("600x490+500+110")  # #窗口位置500后面是字母x
-            self.binPath: str = ""
-            self.binFile = BinFile()
-            self.dis: bool = False
-            self.lift()
-
-        def display(self):
-            self.top = tkinter.Frame(self, width=250, height=30)
-            self.findFram = tkinter.Frame(self, width=250, height=30)
-            self.fB = tkinter.Button(self.findFram, command=self.find, text="查找")
-            self.fB.pack(side="left", padx=3)
-            self.matchStr = tkinter.Entry(self.findFram, width=20)
-            self.matchStr.insert(tkinter.END, "输入查找字符")
-            self.matchStr.bind("<FocusIn>", lambda e: on_select(e, self.matchStr))
-            self.matchStr.pack(side="left", pady=10, padx=5, after=self.fB)
-
-            # 保存表kv
-            self.addFram = tkinter.Frame(self, width=250, height=30)
-            self.valSrc = tkinter.Text(self.addFram, width=20, height=1)
-            self.valKey = ScrolledText(self.addFram, width=80, height=1)
-            self.valText = ScrolledText(self.addFram, width=80, height=5)
-            tkinter.Button(self.addFram, text="追加kv到表", command=self.save).pack()
-            self.valSrc.pack(side="top", pady=12, anchor="w")
-            self.valKey.pack()
-            self.valText.pack(pady=12)
-            # 显示表bin内容
-            # width，如果你设置width=50，那么意味着ScrolledText组件的宽度大约可以容纳50个字符。这些字符是指在组件的默认字体和字号下的“0”这样的标准字符。因此，实际的像素宽度将取决于所使用的字体和屏幕的显示设置
-            self.txtCont = ScrolledText(self, wrap="none")
-            hscroll = tkinter.Scrollbar(
-                self, orient=tkinter.HORIZONTAL, command=self.txtCont.xview
-            )
-
-            self.txtCont.configure(xscrollcommand=hscroll.set)
-            hscroll.pack(side="bottom", fill=tkinter.X)
-            tkinter.Button(self.top, text="打开表文件", command=self.fOTab).pack(
-                side="left"
-            )
-            tkinter.Button(self.top, text="表追加存kv", command=self.disp_save).pack(
-                side="left", padx=10
-            )
-            tkinter.Button(self.top, text="时间工具", command=self.time_tool).pack(
-                side="left"
-            )
-
-            self.top.pack(anchor="w", ipadx=10, padx=5)
-            self.labTabBin = tkinter.Label(
-                self, text="--------------------------------------"
-            )
-            self.labTabBin.pack(side="top", anchor="w")
-            self.findFram.pack(side="top", fill="x", expand=False, padx=2)
-            self.txtCont.insert(1.0, "选择表-->选择增量目录-->打开增量bin文件(可多选)")
-
-            # 全屏填充
-            self.txtCont.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
-            return self
-
-        # 查找
-        def find(self):
-            allStr = self.txtCont.get(1.0, tkinter.END)
-            findStr: str = self.matchStr.get()
-            if findStr == "输入查找字符":
-                return
-            retStr: str = ""
-            for i in allStr.split("\n"):
-                if findStr in i:
-                    retStr += f"{i}\n\n"
-            find_window(findStr, retStr)
-
-        # 追加kv到表的最新bin文件中
-        def save(self):
-            srcInput: str = self.valSrc.get(1.0, tkinter.END)
-            key: str = self.valKey.get(1.0, tkinter.END)
-            val: str = self.valText.get(1.0, tkinter.END)
-            if "放入key串\n" == key or "放入value串\n" == val:
-                return
-            try:
-                str_check(key)
-                str_check(val)
-                keyBin = parse(key)
-                valBin = parse(val)
-                self.binFile.save_rows(keyBin, valBin, src=int(srcInput))
-            except Exception as a:
-                t_box.showinfo("err", f"错误:{a.args}")
-                pass
-
-            self.dis = False
-            self.valKey.delete(1.0, tkinter.END)
-            self.valSrc.delete(1.0, tkinter.END)
-            self.valText.delete(1.0, tkinter.END)
-            self.addFram.pack_forget()
-
-        # 选表
-        def fOTab(self):
-            selBinPath: str = askopenfilenames(
-                title="选择表bin文件(可多选)", initialdir=""
-            )
-            if len(selBinPath) == 0:
-                t_box.showinfo("err", "必需选择db增量bin")
-                return
-
-            # labTabBin.config(text=selBinPath)
-            sp: list = list(selBinPath)
-            sp.sort()
-            self.txtCont.config()
-            self.txtCont.delete(1.0, tkinter.END)
-            accStr: str = ""
-            logging.info(f"read start1")
-            for selP in sp:
-                # self.txtCont.insert(tkinter.CURRENT, f"\n===={selP}=====\n")
-                accStr += f"\n===={selP}=====\n" + self.binFile.open_read(selP)
-
-            # 单行大数据会卡--ScrolledText性能现状
-            lineNum: int = accStr.count("\n")
-            logging.info(f"read start2a  num={lineNum}")
-            if len(accStr) // lineNum > DbWindow.size or lineNum > DbWindow.lineNum:
-                import os
-
-                tab = os.path.basename(os.path.dirname(os.path.dirname(sp[0])))
-                with open(f".{tab}.json", "w") as f:
-                    f.write(accStr)
-                    f.flush()
-
-                self.txtCont.insert(
-                    tkinter.CURRENT,
-                    f"单条有大数据 或 总条数太多:{lineNum}，请打开\n{os.getcwd()}{os.sep}.{tab}.json\n查看",
-                )
-            else:
-                self.txtCont.insert(tkinter.CURRENT, accStr)
-                wordColor: list = [
-                    ("val", "red", ""),
-                    ("key", "red", ""),
-                    ("vsn", "red", ""),
-                    ("row_num", "red", ""),
-                    ("Atom", "blue", ""),
-                    ("Binary", "blue", ""),
-                    # ("List", "blue", ""),
-                    # ("Pid", "blue", ""),
-                    # ("Port", "blue", ""),
-                    # ("Reference", "blue", ""),
-                    # ("Function", "blue", ""),
-                ]
-                highlight_word(wordColor, self.txtCont)
-            logging.info(f"read start2")
-
-        # 显示保存界面
-        def disp_save(self):
-            if not self.dis:
-                self.dis = True
-                self.valKey.insert(1.0, "放入key串")
-                self.valSrc.insert(1.0, "放入src整数")
-                self.valText.insert(1.0, "放入value串")
-                self.addFram.pack(after=self.labTabBin)
-
-        # 打开时间工具
-        def time_tool(self):
-            TimeToolWindow().display()
-
-    gui = DbWindow()
-    gui.display().mainloop()
-
+    logging.info("main start1")
+    TimeToolWindow().display().mainloop()
     # tk主窗关闭后
     logging.info("main end")
 

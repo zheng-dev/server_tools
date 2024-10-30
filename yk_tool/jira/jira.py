@@ -193,7 +193,7 @@ class MyJira:
         matchL: list[str] = tree.xpath('//tr[@class="issuerow"]/@data-issuekey')
         self.checkTimes += 1
         if self.checkTimes % 100 == 0:
-            logging.info(f"check times={self.checkTimes}    {matchL}")
+            logging.info(f"check times={self.checkTimes}    cnt={len(matchL)}")
         newL = []
         old = self.oldJira
         for i in matchL:

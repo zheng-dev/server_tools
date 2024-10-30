@@ -91,6 +91,7 @@ class MyJira:
         return MyJira._instance
 
     def __init__(self) -> None:
+        self.checkTimes: int = 0
         self.session2 = HTMLSession()
         # 把loop先在主线程开出来,多线程登录--不卡ui
         self.session2.browser
@@ -190,7 +191,9 @@ class MyJira:
         tree = lxml.etree.HTML(html)
         #'//td[@class="issuerow"]/p/a/@href'
         matchL: list[str] = tree.xpath('//tr[@class="issuerow"]/@data-issuekey')
-
+        self.checkTimes += 1
+        if self.checkTimes % 100 == 0:
+            logging.info(f"check times={self.checkTimes}    {matchL}")
         newL = []
         old = self.oldJira
         for i in matchL:

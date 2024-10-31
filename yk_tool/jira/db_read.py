@@ -240,10 +240,9 @@ class TimeToolWindow(tkinter.Tk):
     cmdHelp = f"可输入如下cmd运行:\n    按指定时间启服: {GAME}D:\\zzc\\game_alpha>2024-11-03 20:46:00\n    执行4则运算: 6+6"
 
     def display(self):
-        self.dbL: list[DbWindow] = []
         self.logNum: int = 0
         self.title("时间工具")
-        self.geometry("600x400")
+        self.geometry("600x400+500+110")
 
         row1 = tkinter.Frame(self, height=3)
         self.timeTxt = tkinter.Text(row1, height=1, width=20)
@@ -255,8 +254,10 @@ class TimeToolWindow(tkinter.Tk):
         tkinter.Button(row1, text="当前utc", command=self.now_utc).pack(
             side="left", anchor="w", padx=5
         )
-        tkinter.Button(row1, text="db工具", command=self.db_tool).pack(side="left")
-        row1.pack(fill=tkinter.BOTH, padx=15, ipadx=10)
+        tkinter.Button(row1, text="db工具", command=self.db_tool).pack(
+            side="left", ipadx=10
+        )
+        row1.pack(fill=tkinter.BOTH, padx=5)
 
         row2 = tkinter.Frame(self, height=3)
         self.timeUtc = tkinter.Entry(row2, width=20)
@@ -281,7 +282,7 @@ class TimeToolWindow(tkinter.Tk):
         self.log = ScrolledText(self)
         self.log.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
 
-        self.protocol("WM_DELETE_WINDOW", self.quit_any)  # 窗口点右叉时
+        # self.protocol("WM_DELETE_WINDOW", self.quit_any)  # 窗口点右叉时
         return self
 
     def cmd2(self):
@@ -333,27 +334,25 @@ class TimeToolWindow(tkinter.Tk):
 
     # 打开时间工具
     def db_tool(self):
-        d = DbWindow()
-        self.dbL.append(d)
-        d.display()
+        DbWindow(self).display()
 
-    def quit_any(self):
-        for d in self.dbL:
-            try:
-                d.destroy()
-            except:
-                pass
-        self.destroy()
+    # def quit_any(self):
+    #     for d in self.dbL:
+    #         try:
+    #             d.destroy()
+    #         except:
+    #             pass
+    #     self.destroy()
 
 
-class DbWindow(tkinter.Tk):
+class DbWindow(tkinter.Toplevel):
     size: int = 1024
     lineNum: int = 2000
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent: tkinter.Tk):
+        super().__init__(parent)
         self.title("yk db表数据")  # #窗口标题
-        self.geometry("600x490+500+110")  # #窗口位置500后面是字母x
+        self.geometry("700x490")  # #窗口位置500后面是字母x
         self.binPath: str = ""
         self.binFile = BinFile()
         self.dis: bool = False

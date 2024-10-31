@@ -9,9 +9,10 @@ import logging, struct, ahocorasick
 from io import FileIO
 from erlang import *
 from datetime import *
-from tkinter.scrolledtext import ScrolledText
-import tkinter, tkinter.messagebox as t_box, time
+import tkinter, time
+import tkinter.messagebox
 from tkinter.filedialog import *
+from tkinter.scrolledtext import ScrolledText
 
 if __name__ == "__main__":
     # 这里配置log必需在脚本最前面
@@ -421,7 +422,7 @@ class DbWindow(tkinter.Toplevel):
             valBin = parse(val)
             self.binFile.save_rows(keyBin, valBin, src=int(srcInput))
         except Exception as a:
-            t_box.showinfo("err", f"错误:{a.args}")
+            tkinter.messagebox.showinfo("err", f"错误:{a.args}")
             pass
 
         self.dis = False
@@ -434,7 +435,7 @@ class DbWindow(tkinter.Toplevel):
     def fOTab(self):
         selBinPath: str = askopenfilenames(title="选择表bin文件(可多选)", initialdir="")
         if len(selBinPath) == 0:
-            t_box.showinfo("err", "必需选择db增量bin")
+            tkinter.messagebox.showinfo("err", "必需选择db增量bin")
             return
 
         # labTabBin.config(text=selBinPath)

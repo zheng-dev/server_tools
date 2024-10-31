@@ -433,7 +433,9 @@ class DbWindow(tkinter.Toplevel):
 
     # 选表
     def fOTab(self):
-        selBinPath: str = askopenfilenames(title="选择表bin文件(可多选)", initialdir="")
+        selBinPath: str = askopenfilenames(
+            parent=self, title="选择表bin文件(可多选)", initialdir=""
+        )
         if len(selBinPath) == 0:
             tkinter.messagebox.showinfo("err", "必需选择db增量bin")
             return

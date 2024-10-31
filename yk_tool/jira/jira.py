@@ -29,6 +29,8 @@ if __name__ == "__main__":
 from requests import Response
 from requests_html import HTMLSession
 
+__LOG_TIMES__ = 1
+
 
 ##字典cfg
 class AppCfg:
@@ -159,6 +161,7 @@ class MyJira:
         ):
             return self._do_jira_check(r.text)
         elif r.status_code != 200:
+            logging.warning("login net_err:%s==%s", r.status_code)
             self.__isLogin = JiraState.NET_ERROR
         else:
             self.__isLogin = JiraState.LOGIN_NEED
@@ -177,10 +180,11 @@ class MyJira:
             if r is not None and len(r) >= 0:
                 return (r, self.list_interval)
             else:
-                # 确认最新状态
-                return self.jira()
+                return (["net_error"], 5000)
         elif self.__isLogin == JiraState.LOGIN_WAIT:
             return ([], 1000)
+        elif self.__isLogin == JiraState.NET_ERROR:
+            self.__isLogin = JiraState.LOGIN_NEED
         else:
             return (["net_error"], 5000)
 
@@ -192,7 +196,7 @@ class MyJira:
         #'//td[@class="issuerow"]/p/a/@href'
         matchL: list[str] = tree.xpath('//tr[@class="issuerow"]/@data-issuekey')
         self.checkTimes += 1
-        if self.checkTimes % 100 == 0:
+        if self.checkTimes % __LOG_TIMES__ == 0:
             logging.info(f"check times={self.checkTimes}    cnt={len(matchL)}")
         newL = []
         old = self.oldJira

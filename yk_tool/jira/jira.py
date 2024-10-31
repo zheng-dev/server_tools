@@ -7,6 +7,9 @@
 
 import threading, time, logging, webbrowser
 import enum, asyncio
+import tkinter
+from tkinter import scrolledtext
+from PIL import ImageGrab, ImageTk, Image
 
 ## 因为import时__init__需要用到下面的设置信息,所以要在最开始处运行
 if __name__ == "__main__":
@@ -29,7 +32,7 @@ if __name__ == "__main__":
 from requests import Response
 from requests_html import HTMLSession
 
-__LOG_TIMES__ = 1
+__LOG_TIMES__ = 60
 
 
 ##字典cfg
@@ -216,12 +219,11 @@ class MyJira:
 
 ##
 def main():
-    import tkinter
-    from tkinter import scrolledtext
-
     logging.info("main_win")
 
     class JWindow(tkinter.Tk):
+        tops = "jira   ctrl+q截图"
+
         def __init__(self):
             super().__init__()
             #
@@ -230,7 +232,7 @@ def main():
             self.browseUrl = self.jira.cfg["browse"]
 
         def display(self):
-            self.title("jira")  # #窗口标题
+            self.title(JWindow.tops)  # #窗口标题
             self.geometry("260x210+900+110")  # #窗口位置500后面是字母x
             self.attributes("-topmost", 1)
             self.resizable(False, False)
@@ -241,13 +243,14 @@ def main():
 
             self.l1.bind("<Control-Button-1>", self.jira_info)
             self.l1.bind("<Button-1>", self.read_flag)
+            self.l1.bind("<Control-q>", self.grab)
             # 显示窗口-绑定全局快捷键
             # BindKey().hook(["alt", "q", "0"], self.deiconify)
             # self.bind("<Escape>", self.hide)
             return self
 
         def read_flag(self, e):
-            self.title("jira")
+            self.title(JWindow.tops)
 
         def update(self):
             r: tuple[list[str], int] = self.jira.jira()
@@ -269,6 +272,10 @@ def main():
         def jira_info(self, event):
             t = self.l1.get(tkinter.SEL_FIRST, tkinter.SEL_LAST)
             webbrowser.open(f"{self.browseUrl}{t}")
+
+        # 截图
+        def grab(self, evt):
+            GWindow(self).display()
 
     gui = JWindow()
     gui.display().mainloop()
@@ -305,6 +312,81 @@ def main():
 #         self.__keys = keys
 #         self.__keys.sort()
 #         keyboard.hook(self.__on_key)  # 锁屏回来也生效
+
+
+class DPWindow(tkinter.Toplevel):
+    def __init__(self, parent: tkinter.Toplevel):
+        super().__init__(parent)
+
+    def display(self, w: int, h: int, img1: Image):
+        self.wm_attributes("-topmost", 1)
+        self.overrideredirect(True)
+        self.resizable(True, True)
+        self.geometry(f"{w}x{h}+100+600")  # 设置窗口大小
+        #
+        img = ImageTk.PhotoImage(img1)
+        # 将图像添加到标签小部件中
+        image1 = tkinter.Label(self, image=img, border=0)
+        image1.image = img
+        image1.place(x=0, y=0)
+        self.bind("<ButtonPress-1>", self.on_drag_start)
+        self.bind("<B1-Motion>", self.on_drag)
+        self.bind("<ButtonRelease-1>", self.on_drag_stop)
+        self.bind("<Escape>", self.on_quit)
+        return self
+
+    def on_drag_start(self, event):
+        self.x = event.x
+        self.y = event.y
+
+    def on_drag(self, event):
+        deltax = event.x - self.x
+        deltay = event.y - self.y
+        new_x = self.winfo_x() + deltax
+        new_y = self.winfo_y() + deltay
+        self.geometry(f"+{new_x}+{new_y}")
+
+    def on_drag_stop(self, _event):
+        self.x = 0
+        self.y = 0
+
+    def on_quit(self, e):
+        self.destroy()
+
+
+class GWindow(tkinter.Toplevel):
+    __ALPHA: int = 0.6
+
+    def __init__(self, p):
+        super().__init__(p)
+
+    def display(self):
+        self.geometry("400x200")  # 设置窗口大小
+        self.title("取景框-->回车")
+        # attributes("-fullscreen", True)
+        self.wm_attributes("-alpha", GWindow.__ALPHA)
+        self.canvas = tkinter.Canvas(self, bg="lightblue")
+        self.canvas.pack(fill=tkinter.BOTH, expand=tkinter.Y)
+        self.bind("<Return>", self.screenshot)
+        return self
+
+    # 截图函数
+    def screenshot(self, evt):
+        # print(evt)
+        win_x1 = self.winfo_rootx()
+        win_y1 = self.winfo_rooty()  # 内容区
+        # client_y = root.winfo_y()  # 总窗口区
+        # client_x = root.winfo_x()
+        x2 = win_x1 + self.canvas.winfo_width()
+        y2 = win_y1 + self.canvas.winfo_height()
+        self.wm_attributes("-alpha", 0)
+
+        # 截图并显示
+        img = ImageGrab.grab(bbox=(win_x1, win_y1, x2, y2))
+        DPWindow(self).display(
+            self.canvas.winfo_width(), self.canvas.winfo_height(), img
+        )
+        self.wm_attributes("-alpha", GWindow.__ALPHA)
 
 
 if __name__ == "__main__":

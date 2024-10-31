@@ -219,12 +219,10 @@ def highlight_word(wordColor: list[tuple[str, str, str]], s: ScrolledText):
 
 
 ## 查找窗口
-def find_window(findStr: str, matchStr: str):
-    import tkinter
-
-    root = tkinter.Tk()
+def find_window(parent, findStr: str, matchStr: str):
+    root = tkinter.Toplevel(parent)
     root.title(f"yk db表数据-->{findStr}")  # #窗口标题
-    root.geometry("500x490+900+110")  # #窗口位置500后面是字母x
+    root.geometry("1000x490")  # #窗口位置500后面是字母x
     root.lift()
 
     text = ScrolledText(root, width=80, height=5)
@@ -241,7 +239,7 @@ class TimeToolWindow(tkinter.Tk):
 
     def display(self):
         self.logNum: int = 0
-        self.title("时间工具")
+        self.title("yk工具")
         self.geometry("600x400+500+110")
 
         row1 = tkinter.Frame(self, height=3)
@@ -332,17 +330,9 @@ class TimeToolWindow(tkinter.Tk):
         rets: str = f"{self.logNum}>> {stime} --> {utc}\n\n"
         self.log.insert(tkinter.CURRENT, rets)
 
-    # 打开时间工具
+    # 打开表工具
     def db_tool(self):
-        DbWindow(self).display()
-
-    # def quit_any(self):
-    #     for d in self.dbL:
-    #         try:
-    #             d.destroy()
-    #         except:
-    #             pass
-    #     self.destroy()
+        DbWindow(self).display().fOTab()
 
 
 class DbWindow(tkinter.Toplevel):
@@ -352,7 +342,7 @@ class DbWindow(tkinter.Toplevel):
     def __init__(self, parent: tkinter.Tk):
         super().__init__(parent)
         self.title("yk db表数据")  # #窗口标题
-        self.geometry("700x490")  # #窗口位置500后面是字母x
+        self.geometry("1200x490")  # #窗口位置500后面是字母x
         self.binPath: str = ""
         self.binFile = BinFile()
         self.dis: bool = False
@@ -415,7 +405,7 @@ class DbWindow(tkinter.Toplevel):
         for i in allStr.split("\n"):
             if findStr in i:
                 retStr += f"{i}\n\n"
-        find_window(findStr, retStr)
+        find_window(self, findStr, retStr)
 
     # 追加kv到表的最新bin文件中
     def save(self):
@@ -461,10 +451,11 @@ class DbWindow(tkinter.Toplevel):
         # 单行大数据会卡--ScrolledText性能现状
         lineNum: int = accStr.count("\n")
         logging.info(f"read start2a  num={lineNum}")
-        if len(accStr) // lineNum > DbWindow.size or lineNum > DbWindow.lineNum:
-            import os
+        import os
 
-            tab = os.path.basename(os.path.dirname(os.path.dirname(sp[0])))
+        tab = os.path.basename(os.path.dirname(os.path.dirname(sp[0])))
+        self.title(f"yk db表数据-->{tab}")
+        if len(accStr) // lineNum > DbWindow.size or lineNum > DbWindow.lineNum:
             with open(f".{tab}.json", "w") as f:
                 f.write(accStr)
                 f.flush()
@@ -499,10 +490,6 @@ class DbWindow(tkinter.Toplevel):
             self.valSrc.insert(1.0, "放入src整数")
             self.valText.insert(1.0, "放入value串")
             self.addFram.pack(after=self.labTabBin)
-
-
-# gui = DbWindow()
-# gui.display().mainloop()
 
 
 ##

@@ -462,10 +462,13 @@ class DbWindow(tkinter.Toplevel):
             with open(f".{tab}.json", "w") as f:
                 f.write(accStr)
                 f.flush()
-
+            logging.info(f"read start2a1=")
+            rFile = f"{os.getcwd()}{os.sep}.{tab}.json"
+            os.startfile(rFile)
+            logging.info(f"read start2a2=")
             self.txtCont.insert(
                 tkinter.CURRENT,
-                f"单条有大数据 或 总条数太多:{lineNum}，请打开\n{os.getcwd()}{os.sep}.{tab}.json\n查看",
+                f"单条有大数据 或 总条数太多:{lineNum}，请打开\n{rFile}.json\n查看",
             )
         else:
             self.txtCont.insert(tkinter.CURRENT, accStr)

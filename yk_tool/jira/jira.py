@@ -275,6 +275,7 @@ def main():
 
         # 截图
         def grab(self, evt):
+            self.iconify()
             GWindow(self).display()
 
     gui = JWindow()
@@ -368,6 +369,7 @@ class GWindow(tkinter.Toplevel):
         self.canvas = tkinter.Canvas(self, bg="lightblue")
         self.canvas.pack(fill=tkinter.BOTH, expand=tkinter.Y)
         self.bind("<Return>", self.screenshot)
+        self.bind("<Escape>", self.on_quit)
         return self
 
     # 截图函数
@@ -386,7 +388,11 @@ class GWindow(tkinter.Toplevel):
         DPWindow(self).display(
             self.canvas.winfo_width(), self.canvas.winfo_height(), img
         )
+        self.iconify()
         self.wm_attributes("-alpha", GWindow.__ALPHA)
+
+    def on_quit(self, e):
+        self.destroy()
 
 
 if __name__ == "__main__":

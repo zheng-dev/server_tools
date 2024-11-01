@@ -246,7 +246,7 @@ def main():
             self.l1.bind("<Control-q>", self.grab)
             # 显示窗口-绑定全局快捷键
             # BindKey().hook(["alt", "q", "0"], self.deiconify)
-            # self.bind("<Escape>", self.hide)
+            self.bind("<Escape>", self.hide)
             return self
 
         def read_flag(self, e):
@@ -264,9 +264,10 @@ def main():
                 self.deiconify()
             self.after(ms, self.update)
 
-        # # 隐藏
-        # def hide(self, event):
-        #     self.withdraw()
+        # 隐藏
+        def hide(self, event):
+            # self.withdraw() # 消失
+            self.iconify()
 
         # 打开jira号的详情
         def jira_info(self, event):

@@ -5,33 +5,55 @@
 # Date: 2024-08-29
 # decription:删除文件db的增量bak文件
 import os, shutil
-import sys
+import sys, subprocess
+import time
 
 __DB_CFG_ = "db_path.cfg"
+__EXIT = "exit"
 
 
 def main() -> None:
     """删除db目录的增量文件
-    py delete_db.py
+    pyw delete_db.py
     py delete_db.py -i
     py delete_db.py ../
     """
     if len(sys.argv) < 2:
-        current_path = os.path.dirname(__file__)
-        r = os.chdir(current_path)
-        sys.stdout = open("output.txt", "w+")
-        del_cfg_tab()  # 定时清理中
-    elif sys.argv[1] == "-i":
-        install_timer()
+        print(sys.argv, sys.executable)
+        cmd = [sys.executable, sys.argv[0]]
+        subprocess.Popen(cmd, detach=True)
+
+    elif sys.argv[1] == "-sub":
+        time_do()  # 定时清理中
+    elif sys.argv[1] == "-exit":
+        # 加退出标记
+        with open(__EXIT, "w+", encoding="utf-8") as f:
+            f
     elif os.path.isdir(sys.argv[1]):
         # 传指定目录
         ret: bool = del_tab_bak_dir(sys.argv[1])
         print("del_pwd_tab done=", sys.argv[1], ret)
 
 
+# 定时处理
+def time_do():
+    current_path = os.path.dirname(__file__)
+    _r = os.chdir(current_path)
+    sys.stdout = open(".output.txt", "w+")
+    while True:
+        if True == os.path.exists(__EXIT):
+            print("exit")
+            os.remove("exit")
+            return
+        del_cfg_tab()  # 定时清理中
+        sys.stdout.flush()
+        time.sleep(2)
+
+
 def del_cfg_tab() -> None:
     """从配置中读取要清的db所在目录,遍历清除增量目录"""
     try:
+        print(time.strftime("%Y-%m-%d %H:%M:%S"))
         with open(__DB_CFG_, "r", encoding="utf-8") as f:
             while f:
                 line = f.readline()

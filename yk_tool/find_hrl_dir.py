@@ -13,15 +13,13 @@ GAME = ".idea/modules.xml"  # 文件
 
 
 class FindHrlDir:
-    __iml: str = ""
-    __GFindRet: list[str] = []  # 递归遍历目录时存path用
 
     def go(dir):
         os.chdir(dir)
         a = FindHrlDir()
         os.chdir("plugin")
         a._find_dir("", "./")
-        os.chdir("../")
+        os.chdir(dir)
         a._after_find()
         del a
 
@@ -36,7 +34,8 @@ class FindHrlDir:
                 fileStr = m.attrib["filepath"]
                 fileStr1 = (fileStr.split("/"))[-1]
                 print(fileStr1)
-                self.__iml = fileStr1
+                self.__iml: str = fileStr1
+                self.__GFindRet: list[str] = []  # 递归遍历目录时存path用
             except:
                 raise Exception(f"{GAME} xml_err")
         else:
@@ -90,76 +89,45 @@ class FindHrlDir:
             print("xml_err:{0}".format(a.args()))
 
 
-class AppCfg:
-    last_dir = ""
-
-    def serialize(self):
-        # 使用instance的__dict__属性来获取实例的所有属性
-        return {key: value for key, value in self.__dict__.items()}
-
-    def __get_cfg(self):
-        import pathlib
-
-        return str(pathlib.Path.home()) + "/.find_hrl_dir.cfg"
-
-    def __init__(self) -> None:
-        import json
-
-        try:
-            with open(self.__get_cfg(), "r+", -1, "utf-8-sig") as f:
-                r = json.load(f)
-                self.last_dir = r["last_dir"]
-        except:
-            self.last_dir = os.path.dirname(__file__)
-        pass
-
-    def save(self):
-        import json
-
-        data = self.serialize()
-        if {} != data:
-            with open(self.__get_cfg(), "w+", -1, "utf-8-sig") as f:
-                json.dump(data, f)
-
-
-import tkinter, tkinter.messagebox
+import tkinter, tkinter.messagebox, tkinter.filedialog
 
 
 class WFrame(tkinter.Tk):
-    __me = None
-    cfg: AppCfg = None
-    dir: tkinter.Entry = None
-
-    def __new__(cls, *args, **argsK):
-        if cls.__me is None:
-            cls.__me = object.__new__(cls)
-        return cls.__me
 
     def __init__(self, title1):
         super().__init__()
         self.title(title1)
-        self.geometry("300x90+900+110")  # 窗口位置500后面是字母x
+        self.geometry("300x100+900+110")  # 窗口位置500后面是字母x
 
     def display(self):
+        self.wm_attributes("-topmost", 1)
         l1 = tkinter.Label(self, text="项目路径")
         l1.pack()
+
         self.dir = tkinter.Entry(self, width=40)
+        self.dir.pack(pady=5)
 
-        self.cfg = AppCfg()
-        self.dir.insert(0, self.cfg.last_dir)
-        self.dir.pack()
-        self.dir.focus_set()
+        self.go_ask_dir()
 
-        tkinter.Button(self, text="  go  ", command=self.go_handle).pack()
+        r1 = tkinter.Frame(self)
+        tkinter.Button(r1, text="  go  ", command=self.go_handle).pack(side="left")
+        tkinter.Button(r1, text="选择项目", command=self.go_ask_dir).pack(
+            side="left", padx=15
+        )
+        r1.pack()
         return self
+
+    def go_ask_dir(self):
+        self.ask = tkinter.filedialog.askdirectory(title="选择项目目录")
+        self.dir.delete(0, tkinter.END)
+        self.dir.insert(0, self.ask)
+        self.dir.focus_set()
 
     def go_handle(self):
         pathStr = self.dir.get()
-        print(f"=={pathStr}")
+        print(f"project dir==> {pathStr}")
         try:
             FindHrlDir.go(pathStr)
-            self.cfg.last_dir = pathStr
-            self.cfg.save()
             tkinter.messagebox.showinfo("成功", "生成完毕")
         except OSError as a:
             tkinter.messagebox.showinfo(
@@ -172,9 +140,7 @@ class WFrame(tkinter.Tk):
 
 
 def main():
-    a = WFrame("iml-hrl目录增加").display()
-    a.mainloop()
-    a.cfg.save()
+    WFrame("iml-hrl目录增加").display().mainloop()
 
 
 if __name__ == "__main__":

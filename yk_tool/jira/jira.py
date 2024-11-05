@@ -188,6 +188,7 @@ class MyJira:
             return ([], 1000)
         elif self.__isLogin == JiraState.NET_ERROR:
             self.__isLogin = JiraState.LOGIN_NEED
+            return ([], 100)
         else:
             return (["net_error"], 5000)
 

@@ -80,6 +80,7 @@ def l_get_single_char():
 
 def main2():
     import numpy as np
+    import matplotlib.pyplot as plt
     from local_dir import d
 
     d.D.sort()
@@ -88,11 +89,19 @@ def main2():
     r = f"总录像条数={len(d.D)};(内容byte统计为)-->均值={np.mean(d.D)},中位数={np.median(d.D)},min={min(d.D)},max={max(d.D)},众数={am},众数个数={d.D.count(am)}"
     print(r)
 
-    hist1, bin_edges1 = np.histogram(d.D, bins=11, density=False)
-    for i in range(len(hist1)):
-        print(
-            f"{round(bin_edges1[i],2)}kB~{round(bin_edges1[i + 1],2)}kB ==> {hist1[i]}"
-        )
+    # hist1, bin_edges1 = np.histogram(d.D, bins=11, density=False)
+    # for i in range(len(hist1)):
+    #     print(
+    #         f"{round(bin_edges1[i],2)}kB~{round(bin_edges1[i + 1],2)}kB ==> {hist1[i]}"
+    #     )
+    plt.rcParams["font.sans-serif"] = ["SimHei"]  # 全局生效
+    plt.hist(d.D, bins=list(range(0, 173)))
+    plt.title("战斗录像容量分布")
+    plt.grid()
+    plt.xlabel("容量区间 (单位 kB)", fontproperties="SimHei")
+    plt.ylabel("归类 (单位 条数)", fontproperties="SimHei")
+    plt.show()
+
     # print(hist1, bin_edges1, d.D[-3:], d.D[0:3])
 
 

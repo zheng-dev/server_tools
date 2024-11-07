@@ -298,7 +298,7 @@ class TimeToolWindow(tkinter.Tk):
             except Exception as a:
                 rets: str = f"err:{a.args}"
         rets: str = f"{self.logNum}>> cmd_ret --> {rets}\n"
-        self.log.insert(tkinter.CURRENT, rets)
+        self.log.insert(0, rets)
 
     def time_start_game(self, cmdStr: str) -> str:
         r = cmdStr.split(">")
@@ -316,12 +316,12 @@ class TimeToolWindow(tkinter.Tk):
         dt = time.strptime(stime, tFormat)
         utc = int(time.mktime(dt))
         rets: str = f"{self.logNum}>> {stime} --> {utc}\n\n"
-        self.log.insert(tkinter.CURRENT, rets)
+        self.log.insert(0, rets)
 
     def now_utc(self):
         self.logNum += 1
         rets: str = f"{self.logNum}>> now --> {time.time()}\n\n"
-        self.log.insert(tkinter.CURRENT, rets)
+        self.log.insert(0, rets)
 
     def to_local(self):
         self.logNum += 1
@@ -329,7 +329,7 @@ class TimeToolWindow(tkinter.Tk):
         t = int(float(stime))
         utc = datetime.fromtimestamp(t)  # int(time.mktime(dt))
         rets: str = f"{self.logNum}>> {stime} --> {utc}\n\n"
-        self.log.insert(tkinter.CURRENT, rets)
+        self.log.insert(0, rets)
 
     # 打开表工具
     def db_tool(self):

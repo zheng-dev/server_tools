@@ -10,6 +10,7 @@ bp=flask.Blueprint('main',__name__)
 
 @bp.route('/',methods=['get'])
 def home():
+    import time
     u=flask.request.cookies.get('u')
     a:str=flask.request.args.get('name',type=str)
     html=flask.render_template('index.html',title='Welcome Page', name=a,u=u)

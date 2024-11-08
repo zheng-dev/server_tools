@@ -245,9 +245,8 @@ def main():
             self.l1.bind("<Control-Button-1>", self.jira_info)
             self.l1.bind("<Button-1>", self.read_flag)
             self.l1.bind("<Control-q>", self.grab)
-            # 显示窗口-绑定全局快捷键
-            # BindKey().hook(["alt", "q", "0"], self.deiconify)
             self.bind("<Escape>", self.hide)
+
             return self
 
         def read_flag(self, e):
@@ -287,36 +286,6 @@ def main():
     return
 
 
-# ##组合键
-# import keyboard
-
-
-# class BindKey:
-#     def __init__(self) -> None:
-#         self.__keys: list[str] = []
-#         self.__onKeys: list[str] = []
-#         self.__call = None
-
-#     def __on_key(self, event: keyboard.KeyboardEvent):
-#         if event.name in self.__keys and event.event_type == "up":
-#             self.__onKeys.remove(event.name)
-#         elif (
-#             event.name in self.__keys
-#             and event.event_type == "down"
-#             and event.name not in self.__onKeys
-#         ):
-#             self.__onKeys.append(event.name)
-#             self.__onKeys.sort()
-#             if self.__keys == self.__onKeys:
-#                 self.__call()
-
-#     def hook(self, keys: list[str], callback):
-#         self.__call = callback
-#         self.__keys = keys
-#         self.__keys.sort()
-#         keyboard.hook(self.__on_key)  # 锁屏回来也生效
-
-
 class DPWindow(tkinter.Toplevel):
     def __init__(self, parent: tkinter.Toplevel):
         super().__init__(parent)
@@ -332,10 +301,10 @@ class DPWindow(tkinter.Toplevel):
         image1 = tkinter.Label(self, image=img, border=0)
         image1.image = img
         image1.place(x=0, y=0)
+        self.bind("<Escape>", self.on_quit)
         self.bind("<ButtonPress-1>", self.on_drag_start)
         self.bind("<B1-Motion>", self.on_drag)
         self.bind("<ButtonRelease-1>", self.on_drag_stop)
-        self.bind("<Escape>", self.on_quit)
         return self
 
     def on_drag_start(self, event):
@@ -358,43 +327,44 @@ class DPWindow(tkinter.Toplevel):
 
 
 class GWindow(tkinter.Toplevel):
-    __ALPHA: int = 0.6
+    __ALPHA: int = 0.2
 
     def __init__(self, p):
+        self.p = p
         super().__init__(p)
 
     def display(self):
+        # TODO 进来截全屏图->全屏显示此图->裁剪框选图->小窗显示->退出全屏图
         self.geometry("400x200")  # 设置窗口大小
         self.title("取景框-->回车")
-        # attributes("-fullscreen", True)
+        self.attributes("-fullscreen", True)
         self.wm_attributes("-alpha", GWindow.__ALPHA)
         self.wm_attributes("-topmost", 1)
-        self.canvas = tkinter.Canvas(self, bg="blue")
+        self.canvas = tkinter.Canvas(self, bg="gray")
         self.canvas.pack(fill=tkinter.BOTH, expand=tkinter.Y)
-        self.bind("<Return>", self.screenshot)
-        self.bind("<Escape>", self.on_quit)
+
+        self.bind("<ButtonPress-1>", self.on_drag_start)
+        self.bind("<ButtonRelease-1>", self.on_drag_stop)
         return self
 
-    # 截图函数
-    def screenshot(self, evt):
-        # print(evt)
-        win_x1 = self.winfo_rootx()
-        win_y1 = self.winfo_rooty()  # 内容区
-        # client_y = root.winfo_y()  # 总窗口区
-        # client_x = root.winfo_x()
-        x2 = win_x1 + self.canvas.winfo_width()
-        y2 = win_y1 + self.canvas.winfo_height()
-        self.wm_attributes("-alpha", 0)
+    def on_drag_start(self, event):
+        self.x = event.x
+        self.y = event.y
 
-        # 截图并显示
-        img = ImageGrab.grab(bbox=(win_x1, win_y1, x2, y2))
-        DPWindow(self).display(
-            self.canvas.winfo_width(), self.canvas.winfo_height(), img
+    def on_drag_stop(self, event):
+        box = (
+            min(self.x, event.x),
+            min(self.y, event.y),
+            max(self.x, event.x),
+            max(self.y, event.y),
         )
-        self.iconify()
-        self.wm_attributes("-alpha", GWindow.__ALPHA)
-
-    def on_quit(self, e):
+        img = ImageGrab.grab(bbox=box)
+        w = abs(self.x - event.x)
+        h = abs(self.y - event.y)
+        if w * h < 300 or w < 15 or h < 15:
+            return
+        self.wm_attributes("-alpha", 0)
+        DPWindow(self.p).display(w, h, img)
         self.destroy()
 
 

@@ -76,4 +76,62 @@ def ensure_chromium():
     #             zf.extractall()
     #     print("chrome ok==")
     pass
+
+# self.bind("<Return>", self.screenshot)
+# self.bind("<Escape>", self.on_quit)
+# 截图函数
+def screenshot(self, evt):
+    # print(evt)
+    win_x1 = self.winfo_rootx()
+    win_y1 = self.winfo_rooty()  # 内容区
+    # client_y = root.winfo_y()  # 总窗口区
+    # client_x = root.winfo_x()
+    x2 = win_x1 + self.canvas.winfo_width()
+    y2 = win_y1 + self.canvas.winfo_height()
+    self.wm_attributes("-alpha", 0)
+
+    # 截图并显示
+    img = ImageGrab.grab(bbox=(win_x1, win_y1, x2, y2))
+    DPWindow(self).display(
+        self.canvas.winfo_width(), self.canvas.winfo_height(), img
+    )
+    self.iconify()
+    self.wm_attributes("-alpha", GWindow.__ALPHA)
+# 退出tkinter
+def on_quit(self, e):
+    self.destroy()
+    
+```
+```python
+
+# ##组合键 --绑定全局快捷键
+import keyboard
+
+
+class BindKey:
+    def __init__(self) -> None:
+        self.__keys: list[str] = []
+        self.__onKeys: list[str] = []
+        self.__call = None
+
+    def __on_key(self, event: keyboard.KeyboardEvent):
+        if event.name in self.__keys and event.event_type == "up":
+            self.__onKeys.remove(event.name)
+        elif (
+            event.name in self.__keys
+            and event.event_type == "down"
+            and event.name not in self.__onKeys
+        ):
+            self.__onKeys.append(event.name)
+            self.__onKeys.sort()
+            if self.__keys == self.__onKeys:
+                self.__call()
+
+    def hook(self, keys: list[str], callback):
+        """BindKey().hook(["alt", "q", "2"], self.deiconify)<br>绑定alt+q+2"""
+        self.__call = callback
+        self.__keys = keys
+        self.__keys.sort()
+        keyboard.hook(self.__on_key)  # 锁屏回来也生效
+        
 ```

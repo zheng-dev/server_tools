@@ -340,18 +340,29 @@ class GWindow(tkinter.Toplevel):
         self.attributes("-fullscreen", True)
         self.wm_attributes("-alpha", GWindow.__ALPHA)
         self.wm_attributes("-topmost", 1)
-        self.canvas = tkinter.Canvas(self, bg="gray")
-        self.canvas.pack(fill=tkinter.BOTH, expand=tkinter.Y)
 
-        self.bind("<ButtonPress-1>", self.on_drag_start)
-        self.bind("<ButtonRelease-1>", self.on_drag_stop)
+        self.ca = tkinter.Canvas()
+        self.ca.pack(expand=True, fill=tkinter.BOTH)
+
+        self.ca.bind("<ButtonPress-1>", self.on_drag_start)
+        self.ca.bind("<B1-Motion>", self.on_drag)
+        self.ca.bind("<ButtonRelease-1>", self.on_drag_stop)
         return self
 
-    def on_drag_start(self, event):
-        self.x = event.x
-        self.y = event.y
+    def on_drag_start(self, evt: tkinter.Event):
+        self.x = evt.x
+        self.y = evt.y
+        self.rect1 = self.ca.create_rectangle(
+            evt.x, evt.y, evt.x, evt.y, dash=(2, 3, 5)
+        )
 
-    def on_drag_stop(self, event):
+    def on_drag(self, evt: tkinter.Event):
+        self.ca.delete(self.rect1)
+        self.rect1 = self.ca.create_rectangle(
+            self.x, self.y, evt.x, evt.y, dash=(2, 3, 5)
+        )
+
+    def on_drag_stop(self, event: tkinter.Event):
         box = (
             min(self.x, event.x),
             min(self.y, event.y),

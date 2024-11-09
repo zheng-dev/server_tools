@@ -147,8 +147,11 @@ class MyJira:
     ##
     def async_login(self) -> None:
         def l(a: MyJira):
-            asyncio.set_event_loop(a.__sessionLoop)
-            a.login()
+            try:
+                asyncio.set_event_loop(a.__sessionLoop)
+                a.login()
+            except Exception as e:
+                logging.error(f"login err:{e.args}")
 
         threading.Thread(target=l, args=(self,), name="tt").start()
 
@@ -276,8 +279,10 @@ def main():
 
         # 截图
         def grab(self, evt):
+            self.wm_attributes("-alpha", 0)  # 隐身后截图
             self.iconify()
             GWindow(self).display()
+            self.wm_attributes("-alpha", 1)
 
     gui = JWindow()
     gui.display().mainloop()
@@ -289,6 +294,7 @@ def main():
 class DPWindow(tkinter.Toplevel):
     def __init__(self, parent: tkinter.Toplevel):
         super().__init__(parent)
+        self.p = parent
 
     def display(self, w: int, h: int, img1: Image):
         self.wm_attributes("-topmost", 1)
@@ -305,7 +311,12 @@ class DPWindow(tkinter.Toplevel):
         self.bind("<ButtonPress-1>", self.on_drag_start)
         self.bind("<B1-Motion>", self.on_drag)
         self.bind("<ButtonRelease-1>", self.on_drag_stop)
+        self.bind("<Control-q>", self.grab)
         return self
+
+    # 截图
+    def grab(self, _evt: tkinter.Event):
+        GWindow(self.p).display()
 
     def on_drag_start(self, event):
         self.x = event.x
@@ -327,22 +338,25 @@ class DPWindow(tkinter.Toplevel):
 
 
 class GWindow(tkinter.Toplevel):
-    __ALPHA: int = 0.2
+    OUTLINE = 3
 
     def __init__(self, p):
         self.p = p
         super().__init__(p)
 
     def display(self):
-        # TODO 进来截全屏图->全屏显示此图->裁剪框选图->小窗显示->退出全屏图
+        # 进来截全屏图->全屏显示此图->裁剪框选图->小窗显示->退出全屏图
         self.geometry("400x200+0+0")  # 设置窗口大小
         self.title("取景框")
         self.attributes("-fullscreen", True)
-        self.wm_attributes("-alpha", GWindow.__ALPHA)
         self.wm_attributes("-topmost", 1)
 
-        self.ca = tkinter.Canvas(self)
+        self.ca = tkinter.Canvas(self, bg="red", highlightthickness=0)  # 去边框
         self.ca.pack(expand=True, fill=tkinter.BOTH)
+
+        img1 = ImageGrab.grab()
+        self.myPic = ImageTk.PhotoImage(img1)
+        self.ca.create_image(0, 0, anchor=tkinter.NW, image=self.myPic)
 
         self.ca.bind("<ButtonPress-1>", self.on_drag_start)
         self.ca.bind("<B1-Motion>", self.on_drag)
@@ -353,13 +367,25 @@ class GWindow(tkinter.Toplevel):
         self.x = evt.x
         self.y = evt.y
         self.rect1 = self.ca.create_rectangle(
-            evt.x, evt.y, evt.x, evt.y, dash=(2, 3, 5)
+            evt.x,
+            evt.y,
+            evt.x,
+            evt.y,
+            dash=(2, 3, 5),
+            outline="red",
+            width=GWindow.OUTLINE,
         )
 
     def on_drag(self, evt: tkinter.Event):
         self.ca.delete(self.rect1)
         self.rect1 = self.ca.create_rectangle(
-            self.x, self.y, evt.x, evt.y, dash=(2, 3, 5)
+            self.x,
+            self.y,
+            evt.x,
+            evt.y,
+            dash=(2, 3, 5),
+            outline="red",
+            width=GWindow.OUTLINE,
         )
 
     def on_drag_stop(self, event: tkinter.Event):
@@ -369,14 +395,13 @@ class GWindow(tkinter.Toplevel):
             max(self.x, event.x),
             max(self.y, event.y),
         )
-        self.wm_attributes("-alpha", 0)
 
-        img = ImageGrab.grab(bbox=box)
         w = abs(self.x - event.x)
         h = abs(self.y - event.y)
         if w * h < 300 or w < 15 or h < 15:
             return
 
+        img = ImageGrab.grab(bbox=box)
         DPWindow(self.p).display(w, h, img)
         self.destroy()
 

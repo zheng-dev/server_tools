@@ -507,21 +507,9 @@ class DbWindow(tkinter.Toplevel):
 ##
 def main():
     logging.info("main start1")
-    # rec_check()
     TimeToolWindow().display().mainloop()
     # tk主窗关闭后
     logging.info("main end")
-
-
-def rec_check():
-    from pathlib import Path
-    import hashlib
-
-    md5: str = hashlib.md5(Path("a.ico").read_bytes()).hexdigest()
-    # print(Path("a.png").read_bytes())
-    if md5 != "a4dfc53fac3366b23277e599fdac2a95":
-        logging.error("file error")
-        raise (Exception("file_err"))
 
 
 # 窗体ico

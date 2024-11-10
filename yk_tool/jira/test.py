@@ -91,5 +91,62 @@ def test_main():
     pass
 
 
+import tkinter
+from PIL import ImageGrab, ImageTk, Image
+
+
+class WG(tkinter.Tk):
+    def display(self):
+        self.title("dddd")
+        self.geometry("600x800")
+        self.iconbitmap("a.ico")
+        self.iconphoto(False, tkinter.PhotoImage(file="a.ico"))
+        # self.wm_attributes("-alpha", 0.3)
+        self.wm_attributes("-topmost", 1)
+        self.ca = ca = tkinter.Canvas(self, background="red", highlightthickness=0)
+        ca.pack(expand=True, fill=tkinter.BOTH)
+
+        img1 = ImageGrab.grab()
+        self.myPic = ImageTk.PhotoImage(img1)
+        ca.create_image(0, 0, anchor=tkinter.NW, image=self.myPic)
+
+        ca.bind("<ButtonPress-1>", self.on_drag_start)
+        ca.bind("<B1-Motion>", self.on_drag)
+        ca.bind("<ButtonRelease-1>", self.on_drag_stop)
+
+        # image1 = tkinter.Label(self, image=myPic, border=20)
+        # image1.image = myPic
+        # image1.pack()
+
+        return self
+
+    def on_drag_start(self, evt):
+        self.x = evt.x
+        self.y = evt.y
+        self.rect1 = self.ca.create_rectangle(
+            evt.x, evt.y, evt.x, evt.y, dash=(2, 3, 5), outline="red", width=3
+        )
+
+    def on_drag(self, evt):
+        self.ca.delete(self.rect1)
+        self.rect1 = self.ca.create_rectangle(
+            self.x, self.y, evt.x, evt.y, dash=(2, 3, 5), outline="red", width=1
+        )
+
+    def on_drag_stop(self, evt: tkinter.Event):
+        print(self.x, self.y, evt.x, evt.y)
+        print(type(evt))
+        self.ca.delete(self.rect1)
+
+
+def main():
+    WG().display().mainloop()
+
+    from pathlib import Path
+
+    print(Path("a.ico").read_bytes())
+    pass
+
+
 if __name__ == "__main__":
-    test_main()
+    main()

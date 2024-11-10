@@ -507,7 +507,7 @@ class DbWindow(tkinter.Toplevel):
 ##
 def main():
     logging.info("main start1")
-    rec_check()
+    # rec_check()
     TimeToolWindow().display().mainloop()
     # tk主窗关闭后
     logging.info("main end")

@@ -242,6 +242,8 @@ class TimeToolWindow(tkinter.Tk):
         self.logNum: int = 0
         self.title("yk工具")
         self.geometry("600x400+500+110")
+        # self.iconbitmap("a.ico")
+        # self.iconphoto(False, tkinter.PhotoImage(file="a.png"))
 
         row1 = tkinter.Frame(self, height=3)
         self.timeTxt = tkinter.Text(row1, height=1, width=20)

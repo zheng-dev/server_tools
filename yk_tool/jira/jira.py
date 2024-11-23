@@ -52,6 +52,8 @@ class AppCfg:
                 host = cfg["host"]
                 if host == "http://xx/":
                     raise (FileNotFoundError("host_err"))
+                if not isinstance(cfg["interval"], int):
+                    raise (Exception("interval_err"))
                 cfg["login"] = f"{host}login.jsp"
                 # 登录后的必要请求
                 cfg["after_login"] = [f"{host}issues/?filter=-1"]
@@ -104,7 +106,6 @@ class MyJira:
 
         self.cfg: dict[str, str] = AppCfg.cfg_json()
         self.oldJira: list[str] = []
-        self.list_interval: int = None
         self.__isLogin = JiraState.LOGIN_NEED
         self.__head = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0",
@@ -123,7 +124,7 @@ class MyJira:
         self.__isLogin = JiraState.LOGIN_WAIT
         cfg = self.cfg
         uName: str = cfg["user"]
-        self.list_interval = cfg["interval"]
+        self.list_interval: int = cfg["interval"]
         data = {"os_username": uName, "os_password": cfg["pwd"]}
         data["os_destination"] = ""
         data["user_role"] = ""
@@ -176,24 +177,24 @@ class MyJira:
     ##Rets:(jira列表,下次update时间)
     def jira(self) -> tuple[list[str], int]:
         logging.debug("state=%s", self.__isLogin)
-        if self.__isLogin == JiraState.LOGIN_NEED:
-            self.async_login()
-            # 确认最新状态
-            return self.jira()
-        elif self.__isLogin == JiraState.LOGIN_OK:
-            r = self.get_list()
-            logging.debug("LIST=%s", r)
-            if r is not None and len(r) >= 0:
-                return (r, self.list_interval)
-            else:
+        match self.__isLogin:
+            case JiraState.LOGIN_NEED:
+                self.async_login()
+                return ([], 1000)
+            case JiraState.LOGIN_OK:
+                r = self.get_list()
+                logging.debug("LIST=%s", r)
+                if r is not None and len(r) >= 0:
+                    return (r, self.list_interval)
+                else:
+                    return (["net_error"], 5000)
+            case JiraState.LOGIN_WAIT:
+                return ([], 1000)
+            case JiraState.NET_ERROR:
+                self.__isLogin = JiraState.LOGIN_NEED
+                return ([], 100)
+            case _:
                 return (["net_error"], 5000)
-        elif self.__isLogin == JiraState.LOGIN_WAIT:
-            return ([], 1000)
-        elif self.__isLogin == JiraState.NET_ERROR:
-            self.__isLogin = JiraState.LOGIN_NEED
-            return ([], 100)
-        else:
-            return (["net_error"], 5000)
 
     ##检查有没有新的
     def _do_jira_check(self, html: str) -> list[str]:

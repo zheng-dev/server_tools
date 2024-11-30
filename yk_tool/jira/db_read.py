@@ -301,7 +301,7 @@ class TimeToolWindow(tkinter.Tk):
                 rets: str = f"{eval(cmdStr)}\n"
             except Exception as a:
                 rets: str = f"err:{a.args}"
-        rets: str = f"{self.logNum}>> cmd_ret --> {rets}\n"
+        rets: str = f"{self.logNum}>> {cmdStr} --> {rets}\n"
         self.log.insert("0.0", rets)
 
     def time_start_game(self, cmdStr: str) -> str:

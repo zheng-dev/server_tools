@@ -105,5 +105,33 @@ def main2():
     # print(hist1, bin_edges1, d.D[-3:], d.D[0:3])
 
 
+def main_work():
+    """从xls里导出工作周报txt"""
+    import csv, os
+
+    os.chdir("local_dir")
+    filePath: str = "work.csv"
+    ret: dict[tuple[str, str]] = {}
+    out: list = ["", "周末", "请假", "事假"]
+    with open(filePath, newline="", encoding="utf-8-sig") as csvfile:
+        csvreader = csv.reader(csvfile, delimiter=",", quotechar='"')
+        for row in csvreader:
+            oldRow: list = ret.get(row[3], [row[2], 0])
+            oldRow[1] = row[2]
+            for field in row[4:]:
+                if field not in out and field not in oldRow:
+                    oldRow.append(field)
+            ret[row[3]] = oldRow
+
+    # 输出txt
+    with open("work.txt", "+w", encoding="utf-8") as w:
+        for i in range(1, 53):
+            week = ret[str(i)]
+            w.writelines(f"===第{i}=周=={week[0]}--{week[1]}==\n")
+            for idx, txt in enumerate(week[2:], 1):
+                w.writelines(f"{idx}. {txt}\n")
+    print("===done==")
+
+
 if __name__ == "__main__":
     main2()

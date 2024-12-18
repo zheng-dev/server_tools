@@ -52,19 +52,21 @@ class BinFile:
             if len(b) != 4:
                 break
             kl = fileHand.read(2)
-            # (block_size,) = struct.unpack(b">I", b)
             (key_len_num,) = struct.unpack(b">H", kl)
             row_num += 1
             if key_len_num == 0:
+                t = fileHand.read(4 + 6)  # vsn,utc_time
+                (val_len,) = struct.unpack(b">I", fileHand.read(4))
+                bContext = fileHand.read(val_len)
                 # 空块,加位移
                 continue
+
             k_txt = fileHand.read(key_len_num)
-            logging.debug(f"bnum:{b},k-len:{kl},k:{k_txt}")
+            logging.debug(
+                f"bnum:{b},row-len:{key_len_num},k-len_bin:{kl},k_bin:{k_txt}"
+            )
             key = binary_to_term(k_txt)
-            (
-                src,
-                vsn,
-            ) = struct.unpack(b">HI", fileHand.read(6))
+            (vsn,) = struct.unpack(b">I", fileHand.read(4))
             (t1,) = struct.unpack(b">Q", bytes([0, 0]) + fileHand.read(6))
             (val_len,) = struct.unpack(b">I", fileHand.read(4))
 
@@ -81,7 +83,7 @@ class BinFile:
                     "vsn": vsn,
                     "key": key,
                     "val": r,
-                    "src": src,
+                    "src": 1,
                     "time": str(t) + str(t1 % 1000),
                     "row_num": row_num,
                 }
@@ -120,7 +122,7 @@ class BinFile:
         # db加载用的时间最新的
         time = struct.pack(b">Q", now_second() * 1000)
         r = struct.pack(b">IH", blockSize, ksize) + key
-        r += struct.pack(b">HI", src, 3)
+        r += struct.pack(b">I", 3)
         r += time[2:]  # 8byte变6
         r += struct.pack(b">I", vsize) + val
 

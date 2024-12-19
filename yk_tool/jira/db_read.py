@@ -18,7 +18,7 @@ if __name__ == "__main__":
     # 这里配置log必需在脚本最前面
     logging.basicConfig(
         format="%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s",
-        level=logging.INFO,
+        level=logging.DEBUG,
         filename=".db_read.log",
         filemode="w",
     )
@@ -48,6 +48,12 @@ class BinFile:
         # steam文件格式为：[4字节块长+2字节键长（0表示空块）+键数据+2字节血源+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
         termStr = ""
         fileHand.seek(0)
+
+        # print("======")
+        # x = fileHand.read(40)
+        # for i in x:
+        #     print("%#x" % i, end=" ")
+
         row_num = 0  # 行计数
         while True:
             b = fileHand.read(4)
@@ -57,16 +63,16 @@ class BinFile:
             (key_len_num,) = struct.unpack(b">H", kl)
             row_num += 1
             if key_len_num == 0:
-                t = fileHand.read(4 + 6)  # vsn,utc_time
-                (val_len,) = struct.unpack(b">I", fileHand.read(4))
-                bContext = fileHand.read(val_len)
-                # 空块,加位移
-                continue
+                key_len_num = 11  # 取固定长key {format, {{role_uid, integer, 23}, {value, any, 0}}}
+                # t = fileHand.read(4 + 6)  # vsn,utc_time
+                # (val_len,) = struct.unpack(b">I", fileHand.read(4))
+                # bContext = fileHand.read(val_len)
+                # logging.debug(f"bnum:{b},row-len:{key_len_num},k-len_bin:{kl}")
+                # # 空块,加位移
+                # continue
 
             k_txt = fileHand.read(key_len_num)
-            logging.debug(
-                f"bnum:{b},row-len:{key_len_num},k-len_bin:{kl},k_bin:{k_txt}"
-            )
+
             key = binary_to_term(k_txt)
             # 开关是否有src 血源
             src = 1

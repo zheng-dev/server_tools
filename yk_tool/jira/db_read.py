@@ -29,6 +29,8 @@ class BinFile:
 
     def __init__(self) -> None:
         self.fileName: str = None
+        # 是否有src血源字段
+        self.is_have_src: bool = False
 
     def __del__(self):
         logging.info("close")
@@ -66,6 +68,11 @@ class BinFile:
                 f"bnum:{b},row-len:{key_len_num},k-len_bin:{kl},k_bin:{k_txt}"
             )
             key = binary_to_term(k_txt)
+            # 开关是否有src 血源
+            src = 1
+            if self.is_have_src:
+                (src,) = struct.unpack(b">I", fileHand.read(2))
+
             (vsn,) = struct.unpack(b">I", fileHand.read(4))
             (t1,) = struct.unpack(b">Q", bytes([0, 0]) + fileHand.read(6))
             (val_len,) = struct.unpack(b">I", fileHand.read(4))
@@ -83,7 +90,7 @@ class BinFile:
                     "vsn": vsn,
                     "key": key,
                     "val": r,
-                    "src": 1,
+                    "src": src,
                     "time": str(t) + str(t1 % 1000),
                     "row_num": row_num,
                 }
@@ -122,7 +129,12 @@ class BinFile:
         # db加载用的时间最新的
         time = struct.pack(b">Q", now_second() * 1000)
         r = struct.pack(b">IH", blockSize, ksize) + key
-        r += struct.pack(b">I", 3)
+
+        # 开关是否有src 血源
+        if self.is_have_src:
+            r += struct.pack(b">H", src)
+        # TODO 下面的3000需要取当前key的来加
+        r += struct.pack(b">I", 3000)
         r += time[2:]  # 8byte变6
         r += struct.pack(b">I", vsize) + val
 

@@ -46,77 +46,55 @@ class BinFile:
         # TODO 定长文件格式为：[2字节键长+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
         # TODO 变长文件格式为：[4字节块长+2字节键长（0表示空块）+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
         # steam文件格式为：[4字节块长+2字节键长（0表示空块）+键数据+2字节血源+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
-        termStr = ""
+        termStr: str = ""
         fileHand.seek(0)
-
-        # print("======")
-        # x = fileHand.read(40)
-        # for i in x:
-        #     print("%#x" % i, end=" ")
-
-        row_num = 0  # 行计数
+        row_num: int = 0  # 行计数
         while True:
-            b = fileHand.read(4)
-            if len(b) != 4:
+            key = None
+            blockBin: bytes = fileHand.read(6)
+            if len(blockBin) != 6:
                 break
-            kl = fileHand.read(2)
-            (key_len_num,) = struct.unpack(b">H", kl)
+            blockSize, keySize = struct.unpack(b">IH", blockBin)
+            blockValBin: bytes = fileHand.read(blockSize - 2)
             row_num += 1
-            if key_len_num == 0:
-                # 根据term来算长度
-                OTell = fileHand.tell()
-                keyBin = fileHand.read(20)
-                if 131 == keyBin[0]:
-                    print(keyBin)
-                    k_txt = fileHand.read(key_len_num)
-                    i, key = _binary_to_term(1, keyBin)
-
-                    print(i, key, fileHand.tell())
-                    fileHand.seek(OTell + i)
-                    print("now", row_num, key, fileHand.tell())
-                # t = fileHand.read(4 + 6)  # vsn,utc_time
-                # (val_len,) = struct.unpack(b">I", fileHand.read(4))
-                # bContext = fileHand.read(val_len)
-                # logging.debug(f"bnum:{b},row-len:{key_len_num},k-len_bin:{kl}")
-                # # 空块,加位移
-                # continue
+            if keySize == 0:
+                # 根据term来算长度  已del块
+                if 131 == blockValBin[0]:
+                    idx, key = _binary_to_term(1, blockValBin)
+                else:
+                    continue  # 无key
             else:
-                k_txt = fileHand.read(key_len_num)
-                key = binary_to_term(k_txt)
+                idx, key = _binary_to_term(1, blockValBin)
             # 开关是否有src 血源
-            src = 1
+            src: int = 1
             if self.is_have_src:
-                (src,) = struct.unpack(b">I", fileHand.read(2))
+                idx = idx + 2
+                (src,) = struct.unpack(b">H", blockValBin[idx : idx + 2])
 
-            valHead = fileHand.read(14)
-            print(valHead, len(valHead[0:4]), len(valHead[4:10]), len(valHead[10:14]))
+            valHead = blockValBin[idx : idx + 14]
             (vsn,) = struct.unpack(b">I", valHead[0:4])
-            (t1,) = struct.unpack(b">Q", bytes([0, 0]) + valHead[4:10])
-            (val_len,) = struct.unpack(b">I", valHead[10:14])
+            utc, valLen = struct.unpack(b">QI", bytes([0, 0]) + valHead[4:14])
 
-            # print(val_len, key_len_num, vsn, t1)
-
-            bContext = fileHand.read(val_len)
+            bContext = blockValBin[idx + 14 :]
+            val = None
             try:
                 if len(bContext) > 0:
-                    r = binary_to_term(bContext)
-                else:
-                    r = None  # 此key已经del
-                t = datetime.fromtimestamp(t1 // 1000)
-                ext_info: dict = {
-                    "vsn": vsn,
-                    "key": key,
-                    "val": r,
-                    "src": src,
-                    "time": str(t) + str(t1 % 1000),
-                    "row_num": row_num,
-                }
-                termStr += str(ext_info) + "\n\n"
-            except Exception as a:
+                    val = _binary_to_term(1, bContext)
+            except:
                 logging.error(
-                    f"bin_err:{bContext}--{row_num}--{key}=={val_len}={valHead}=={vsn}"
+                    f"bin_err:rNum:{row_num},key:{key},valLen:{valLen},valIdx:{idx},bin1:{len(bContext)},bin2:{int_array(blockValBin)},val:{int_array(bContext)}"
                 )
-                termStr += "\nbin_err"
+            timeFormat: datetime = datetime.fromtimestamp(utc // 1000)
+            ext_info: dict = {
+                "vsn": vsn,
+                "del": keySize == 0,
+                "key": key,
+                "val": val,
+                "src": src,
+                "time": str(timeFormat) + str(utc % 1000),
+                "row_num": row_num,
+            }
+            termStr += str(ext_info) + "\n\n"
 
         self.hash = hash(termStr)
         return termStr
@@ -549,6 +527,14 @@ def get_resource_path(relative_path):
         base_path = os.path.abspath(".")
 
     return os.path.join(base_path, relative_path)
+
+
+def int_array(fromBytes: bytes) -> list[int]:
+    """返回十进制的binary序列"""
+    rowBin: list[int] = []
+    for i in fromBytes:
+        rowBin.append(i)
+    return rowBin
 
 
 ##

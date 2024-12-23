@@ -87,7 +87,7 @@ class BinFile:
             timeFormat: datetime = datetime.fromtimestamp(utc // 1000)
             ext_info: dict = {
                 "vsn": vsn,
-                "del": keySize == 0,
+                "del": keySize != 0,
                 "key": key,
                 "val": val,
                 "src": src,

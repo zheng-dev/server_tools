@@ -110,7 +110,7 @@ def main_work():
     import csv, os
 
     os.chdir("local_dir")
-    filePath: str = "work.csv"
+    filePath: str = "C:\\Users\\Administrator\\Downloads\\Sheet1.csv"
     ret: dict[tuple[str, str]] = {}
     out: list = ["", "周末", "请假", "事假"]
     with open(filePath, newline="", encoding="utf-8-sig") as csvfile:
@@ -122,16 +122,19 @@ def main_work():
                 if field not in out and field not in oldRow:
                     oldRow.append(field)
             ret[row[3]] = oldRow
-
+    # del
+    os.remove(filePath)
     # 输出txt
-    with open("work.txt", "+w", encoding="utf-8") as w:
+    outFile: str = "work.txt"
+    with open(outFile, "+w", encoding="utf-8") as w:
         for i in range(1, 53):
             week = ret[str(i)]
             w.writelines(f"===第{i}=周=={week[0]}--{week[1]}==\n")
             for idx, txt in enumerate(week[2:], 1):
                 w.writelines(f"{idx}. {txt}\n")
     print("===done==")
+    os.startfile(outFile)
 
 
 if __name__ == "__main__":
-    main2()
+    main_work()

@@ -6,6 +6,7 @@
 # decription:对比目录 且以主目录为准进行文件同步-支持忽略指定路径文件
 
 from collections import namedtuple
+from typing import NoReturn
 import os, time, shutil
 
 Cache = namedtuple(
@@ -63,19 +64,17 @@ class TongBuFile:
         pass
 
     # 检查文件修改
-    def loop_check(self):
+    def check(self):
         self.checkTimes += 1
         for i in os.listdir(self.mainDir):
-            self.check1(os.sep, i)
+            self._check1(os.sep, i)
 
         self.del_file()
         print("===done====", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-
         time.sleep(10)
-        self.loop_check()
 
     # 递归check
-    def check1(self, path: str, file: str):
+    def _check1(self, path: str, file: str):
         file1: str = path + file
         if file1 in self.ignores:
             return
@@ -99,7 +98,7 @@ class TongBuFile:
         # 继续子目录
         if not isFile:
             for i in os.listdir(absFile1):
-                self.check1(file1 + os.sep, i)
+                self._check1(file1 + os.sep, i)
 
     # 同步
     def copy(self, fileOrDir: str, isFile: bool, modifyTime: float):
@@ -122,9 +121,9 @@ class TongBuFile:
         pass
 
     # 开始
-    def start(self):
-        self.loop_check()
-        pass
+    def start(self) -> NoReturn:
+        while True:
+            self.check()
 
 
 def main() -> None:

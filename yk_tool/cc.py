@@ -63,18 +63,23 @@ class TongBuFile:
             self.cache.pop(k)
         pass
 
-    # 检查文件修改
-    def check(self):
+    # 检查主目录文件
+    def check_main_dir(self):
         self.checkTimes += 1
         for i in os.listdir(self.mainDir):
-            self._check1(os.sep, i)
+            self._loop_dir_check1(os.sep, i)
 
         self.del_file()
-        print("===done====", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+
+        now: str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        print(
+            "\r===done====" + now,
+            end="",
+        )
         time.sleep(10)
 
-    # 递归check
-    def _check1(self, path: str, file: str):
+    # 递归目录check
+    def _loop_dir_check1(self, path: str, file: str):
         file1: str = path + file
         if file1 in self.ignores:
             return
@@ -98,7 +103,7 @@ class TongBuFile:
         # 继续子目录
         if not isFile:
             for i in os.listdir(absFile1):
-                self._check1(file1 + os.sep, i)
+                self._loop_dir_check1(file1 + os.sep, i)
 
     # 同步
     def copy(self, fileOrDir: str, isFile: bool, modifyTime: float):
@@ -123,7 +128,7 @@ class TongBuFile:
     # 开始
     def start(self) -> NoReturn:
         while True:
-            self.check()
+            self.check_main_dir()
 
 
 def main() -> None:

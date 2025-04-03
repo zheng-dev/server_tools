@@ -5,17 +5,13 @@
 # Date: 2025-03-31
 # decription:对比目录 且以主目录为准进行文件同步-支持忽略指定路径文件
 
-from collections import namedtuple
-from typing import NoReturn
+from typing import NoReturn, NamedTuple
 import os, time, shutil
 
-Cache = namedtuple(
-    "Cache",
-    [
-        "checked_times",  # 文件经历检查次数-作删除判定
-        "last_m_time",  # 上次修改时间-作修改判定
-    ],
-)
+
+class Cache(NamedTuple):
+    checked_times: int  # 文件经历检查次数-作删除判定
+    last_m_time: float  # 上次修改时间-作修改判定
 
 
 # 文件对比同步（从主目录 对比到 附目录）
@@ -132,6 +128,9 @@ class TongBuFile:
 
 
 def main() -> None:
+    title = time.strftime("%y-%m-%d %a", time.localtime())
+    print(f"\033]0;{title}\007")
+
     a = TongBuFile()
     a.start()
 

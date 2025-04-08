@@ -36,10 +36,10 @@ class TongBuFile:
                 json.dump({
                     "mainDir":"改成主目录",
                     "dirs":["附目录1","附目录2"],
-                    "ignores":[]
+                    "ignores":["主目录下的相对完整文件路径"]
                 },f,ensure_ascii=False)
                 
-                print("请去填写配置文件"+cfgFile+",然后保存再重启程序")
+                print("请去填写配置文件>"+cfgFile+"<,然后保存再重启程序")
                 sys.exit()
             
     def _cfg(self):
@@ -160,6 +160,8 @@ class TongBuFile:
         try:
             while True:
                 self.check_main_dir()
+        except FileNotFoundError as e:
+            print(e.filename+" 文件路径错误,检查配置文件各项是否正确")        
         except Exception as e:
             print(e.args,"检查配置文件各项是否正确")
 

@@ -39,7 +39,7 @@ class TongBuFile:
                     "ignores":[]
                 },f,ensure_ascii=False)
                 
-                print("请去填写配置文件"+cfgFile)
+                print("请去填写配置文件"+cfgFile+",然后保存再重启程序")
                 sys.exit()
             
     def _cfg(self):
@@ -161,7 +161,7 @@ class TongBuFile:
             while True:
                 self.check_main_dir()
         except Exception as e:
-            print(e.args,"check cnf")
+            print(e.args,"检查配置文件各项是否正确")
 
 
 def main() -> NoReturn:

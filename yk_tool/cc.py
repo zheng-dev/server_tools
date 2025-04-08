@@ -31,6 +31,7 @@ class TongBuFile:
     def __init__(self):
         self._cfg()
 
+        self.title: str = ""
         # 主目录缓存表
         self.cache: dict[str, Cache] = {}
         # 公共检查次数
@@ -67,11 +68,17 @@ class TongBuFile:
 
         self.del_file()
 
-        now: str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        now: str = time.strftime("%y-%m-%d %a %H:%M:%S", time.localtime())
         print(
             "\r===done====" + now,
             end="",
         )
+        #
+        title: str = now[0:12]
+        if self.title != title:
+            self.title = title
+            print(f"\033]0;{title}\007")
+
         time.sleep(10)
 
     # 递归目录check
@@ -81,25 +88,29 @@ class TongBuFile:
             return
 
         absFile1: str = self.mainDir + file1
-        isFile: bool = os.path.isfile(absFile1)
-        if isFile:
-            modifyTime: float = os.path.getmtime(absFile1)
-        else:
-            modifyTime: float = os.path.getctime(absFile1)
+        try:
+            isFile: bool = os.path.isfile(absFile1)
+            if isFile:
+                modifyTime: float = os.path.getmtime(absFile1)
+            else:
+                modifyTime: float = os.path.getctime(absFile1)
 
-        # 是否同步,如None,文件时间晚于上次检查时间；
-        old: None | Cache = self.cache.get(file1, None)
-        isCopy: bool = True
-        if old is not None:
-            isCopy: bool = old.last_m_time != modifyTime
-        if isCopy:
-            self.copy(file1, isFile, modifyTime)
+            # 是否同步,如None,文件时间晚于上次检查时间；
+            old: None | Cache = self.cache.get(file1, None)
+            isCopy: bool = True
+            if old is not None:
+                isCopy: bool = old.last_m_time != modifyTime
+            if isCopy:
+                self.copy(file1, isFile, modifyTime)
 
-        self.cache[file1] = Cache(self.checkTimes, modifyTime)
-        # 继续子目录
-        if not isFile:
-            for i in os.listdir(absFile1):
-                self._loop_dir_check1(file1 + os.sep, i)
+            self.cache[file1] = Cache(self.checkTimes, modifyTime)
+            # 继续子目录
+            if not isFile:
+                for i in os.listdir(absFile1):
+                    self._loop_dir_check1(file1 + os.sep, i)
+        except:
+            # 文件、目录 中途被del
+            pass
 
     # 同步
     def copy(self, fileOrDir: str, isFile: bool, modifyTime: float):
@@ -127,10 +138,7 @@ class TongBuFile:
             self.check_main_dir()
 
 
-def main() -> None:
-    title = time.strftime("%y-%m-%d %a", time.localtime())
-    print(f"\033]0;{title}\007")
-
+def main() -> NoReturn:
     a = TongBuFile()
     a.start()
 

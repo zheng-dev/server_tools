@@ -16,16 +16,39 @@ class Cache(NamedTuple):
 
 # 文件对比同步（从主目录 对比到 附目录）
 class TongBuFile:
-    def _cfg(self):
-        self.mainDir: str = "F:\\sanguozhi\\server\\int\\plugin"
-        # 绝对路径目录列表 附目录
-        self.dirs: list[str] = [
-            "F:\\sanguozhi\\server\\int2\\plugin",
-            "F:\\sanguozhi\\server\\int3\\plugin",
-            "F:\\sanguozhi\\server\\int4\\plugin",
+    def _json(self)->dict|NoReturn:
+        """
+        dict[
+            mainDir:str,
+            dirs:list[str],
+            ignores:list[str]
         ]
+        """
+        import json,sys
+        utf:str="utf-8-sig"
+        cfgFile:str=".cc.cnf"
+        try:
+            with open(cfgFile,"r+",-1,utf) as f:
+                cfg:dict=json.load(f)
+                return cfg
+        except FileNotFoundError:
+            with open(cfgFile,"w+",-1,utf) as f:
+                json.dump({
+                    "mainDir":"改成主目录",
+                    "dirs":["附目录1","附目录2"],
+                    "ignores":[]
+                },f,ensure_ascii=False)
+                
+                print("请去填写配置文件"+cfgFile)
+                sys.exit()
+            
+    def _cfg(self):
+        cfg=self._json()
+        self.mainDir: str = cfg["mainDir"]
+        # 绝对路径目录列表 附目录
+        self.dirs: list[str] = cfg["dirs"]
         # 忽略文件列表
-        self.ignores: list[str] = ["\\#\\.cfg\\port.cfg"]
+        self.ignores: list[str] = cfg["ignores"]
 
     #
     def __init__(self):
@@ -123,8 +146,11 @@ class TongBuFile:
 
     # 开始
     def start(self) -> NoReturn:
-        while True:
-            self.check_main_dir()
+        try:
+            while True:
+                self.check_main_dir()
+        except Exception as e:
+            print(e.args,"check ")
 
 
 def main() -> None:

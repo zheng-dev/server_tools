@@ -161,7 +161,7 @@ class TongBuFile:
             while True:
                 self.check_main_dir()
         except Exception as e:
-            print(e.args,"check ")
+            print(e.args,"check cnf")
 
 
 def main() -> NoReturn:

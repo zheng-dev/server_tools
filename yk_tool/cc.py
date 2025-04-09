@@ -16,7 +16,7 @@ class Cache(NamedTuple):
 
 # 文件对比同步（从主目录 对比到 附目录）
 class TongBuFile:
-    def _json(self)->dict|NoReturn:
+    def _cfg_json_load(self) -> None | NoReturn:
         """
         dict[
             mainDir:str,
@@ -24,35 +24,37 @@ class TongBuFile:
             ignores:list[str]
         ]
         """
-        import json,sys
-        utf:str="utf-8-sig"
-        cfgFile:str=".cc.cnf"
+        import json, sys
+
+        utf: str = "utf-8-sig"
+        cfgFile: str = ".cc.cnf"
         try:
-            with open(cfgFile,"r+",-1,utf) as f:
-                cfg:dict=json.load(f)
-                return cfg
+            with open(cfgFile, "r+", -1, utf) as f:
+                cfg: dict = json.load(f)
+                # 主目录
+                self.mainDir: str = cfg["mainDir"]
+                # 绝对路径目录列表 附目录
+                self.dirs: list[str] = cfg["dirs"]
+                # 忽略文件列表
+                self.ignores: list[str] = cfg["ignores"]
         except FileNotFoundError:
-            with open(cfgFile,"w+",-1,utf) as f:
-                json.dump({
-                    "mainDir":"改成主目录",
-                    "dirs":["附目录1","附目录2"],
-                    "ignores":["主目录下的相对完整文件路径"]
-                },f,ensure_ascii=False)
-                
-                print("请去填写配置文件>"+cfgFile+"<,然后保存再重启程序")
+            with open(cfgFile, "w+", -1, utf) as f:
+                json.dump(
+                    {
+                        "mainDir": "改成主目录",
+                        "dirs": ["附目录1", "附目录2"],
+                        "ignores": ["主目录下的相对完整文件路径"],
+                    },
+                    f,
+                    ensure_ascii=False,
+                )
+
+                print("请去填写配置文件>" + cfgFile + "<,然后保存再重启程序")
                 sys.exit()
-            
-    def _cfg(self):
-        cfg=self._json()
-        self.mainDir: str = cfg["mainDir"]
-        # 绝对路径目录列表 附目录
-        self.dirs: list[str] = cfg["dirs"]
-        # 忽略文件列表
-        self.ignores: list[str] = cfg["ignores"]
 
     #
     def __init__(self):
-        self._cfg()
+        self._cfg_json_load()
 
         self.title: str = ""
         # 主目录缓存表
@@ -161,9 +163,9 @@ class TongBuFile:
             while True:
                 self.check_main_dir()
         except FileNotFoundError as e:
-            print(e.filename+" 文件路径错误,检查配置文件各项是否正确")        
+            print(e.filename + " 文件路径错误,检查配置文件各项是否正确")
         except Exception as e:
-            print(e.args,"检查配置文件各项是否正确")
+            print(e.args, "检查配置文件各项是否正确")
 
 
 def main() -> NoReturn:

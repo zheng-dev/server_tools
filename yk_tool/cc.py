@@ -158,10 +158,12 @@ class TongBuFile:
         pass
 
     # 开始
-    def start(self) -> NoReturn:
+    @staticmethod
+    def start() -> NoReturn:
         try:
+            a = TongBuFile()
             while True:
-                self.check_main_dir()
+                a.check_main_dir()
         except FileNotFoundError as e:
             print(e.filename + " 文件路径错误,检查配置文件各项是否正确")
         except Exception as e:
@@ -169,8 +171,7 @@ class TongBuFile:
 
 
 def main() -> NoReturn:
-    a = TongBuFile()
-    a.start()
+    TongBuFile.start()
 
 
 if __name__ == "__main__":

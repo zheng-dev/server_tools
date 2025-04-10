@@ -70,16 +70,18 @@ class TongBuFile:
             old = self.cache[k]
             if old.checked_times != publicCheckTimes:
                 deleted.append(k)
+                print("del", k)
                 for dir in self.dirs:
                     file: str = dir + k
                     try:
-                        if os.path.isfile:
+                        if os.path.isfile(file):
                             os.remove(file)
                         else:
                             shutil.rmtree(file)
-                    except:
+                    except Exception as e:
+                        print("del err:" + file, e.args)
                         pass
-                print("del", k)
+
         # 遍历后才能pop
         for k in deleted:
             self.cache.pop(k)

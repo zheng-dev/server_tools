@@ -117,10 +117,9 @@ def main_work():
     with open(filePath, newline="", encoding="utf-8-sig") as csvfile:
         ret: dict[str, list[str]] = {}
         exclude: list = ["", "周末", "请假", "事假"]
-        row: list[str]
+        row: list[str]  # [num,name,date,week,txt1,txt2,txt3...]
 
-        csvreader = csv.reader(csvfile, delimiter=",", quotechar='"')
-        for row in csvreader:  # [num,name,date,week,txt1,txt2,txt3]
+        for row in csv.reader(csvfile, delimiter=",", quotechar='"'):
             oldRow: list = ret.get(row[3], [row[2], 0])
             oldRow[1] = row[2]
             for field in row[4:]:

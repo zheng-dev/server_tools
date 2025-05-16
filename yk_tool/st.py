@@ -105,21 +105,26 @@ def main2():
     # print(hist1, bin_edges1, d.D[-3:], d.D[0:3])
 
 
+# from typing import NamedTuple
+
+
 def main_work():
     """从xls里导出工作周报txt"""
     import csv, os
 
     os.chdir("local_dir")
     filePath: str = "C:\\Users\\Administrator\\Downloads\\Sheet1.csv"
-    ret: dict[tuple[str, str]] = {}
-    out: list = ["", "周末", "请假", "事假"]
     with open(filePath, newline="", encoding="utf-8-sig") as csvfile:
+        ret: dict[str, list[str]] = {}
+        exclude: list = ["", "周末", "请假", "事假"]
+        row: list[str]
+
         csvreader = csv.reader(csvfile, delimiter=",", quotechar='"')
-        for row in csvreader:
+        for row in csvreader:  # [num,name,date,week,txt1,txt2,txt3]
             oldRow: list = ret.get(row[3], [row[2], 0])
             oldRow[1] = row[2]
             for field in row[4:]:
-                if field not in out and field not in oldRow:
+                if field not in exclude and field not in oldRow:
                     oldRow.append(field)
             ret[row[3]] = oldRow
     # del
@@ -134,6 +139,26 @@ def main_work():
                 w.writelines(f"{idx}. {txt}\n")
     print("===done==")
     os.startfile(outFile)
+
+
+def bc():
+    """两行逐字对比"""
+    with open("d:\\a.txt", "r", encoding="utf-8") as a:
+        l1: str = a.readline()
+        l2: str = a.readline()
+        s2: int = len(l2)
+        i = 0
+        while True:
+            try:
+                print(i, l1[i], l2[i])
+                if s2 < i and l1[i] != l2[i]:
+                    print("====ok==", l1[i - 4 : 40])
+                    print(l2[i - 4 : 40])
+                    return
+            except:
+                print(i, l1[i - 6 :], l2[i - 6 :])
+                return
+            i += 1
 
 
 if __name__ == "__main__":

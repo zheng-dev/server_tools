@@ -30,13 +30,16 @@ class TongBuFile:
         cfgFile: str = ".cc.cnf"
         try:
             with open(cfgFile, "r+", -1, utf) as f:
-                cfg: dict = json.load(f)
+                cfg: dict[str,list[str]|str] = json.load(f)
                 # 主目录
-                self.mainDir: str = cfg["mainDir"]
-                # 绝对路径目录列表 附目录
-                self.dirs: list[str] = cfg["dirs"]
-                # 忽略文件列表
-                self.ignores: list[str] = cfg["ignores"]
+                if type(cfg["mainDir"]) is str and type(cfg["dirs"]) is list and type(cfg["ignores"]) is list:
+                    self.mainDir: str = cfg["mainDir"]
+                    # 绝对路径目录列表 附目录
+                    self.dirs: list[str] = cfg["dirs"]
+                    # 忽略文件列表
+                    self.ignores: list[str] = cfg["ignores"]
+                else:
+                    raise(FileNotFoundError("value_err"))    
         except FileNotFoundError:
             with open(cfgFile, "w+", -1, utf) as f:
                 json.dump(
@@ -159,22 +162,18 @@ class TongBuFile:
                     pass
         pass
 
-    # 开始
-    @staticmethod
-    def start() -> NoReturn:
-        try:
-            a = TongBuFile()
-            while True:
-                a.check_main_dir()
-        except FileNotFoundError as e:
-            print(e.filename + " 文件路径错误,检查配置文件各项是否正确")
-        except Exception as e:
-            print(e.args, "检查配置文件各项是否正确")
-
-
 def main() -> NoReturn:
-    TongBuFile.start()
-
+    """命令行入口"""
+    try:
+        a = TongBuFile()
+        while True:
+            a.check_main_dir()
+    except FileNotFoundError as e:
+        print(e.filename + " 文件路径错误,检查配置文件各项是否正确")
+    except Exception as e:
+        print(e.args, "检查配置文件各项是否正确")
+    finally:
+        os._exit(1)
 
 if __name__ == "__main__":
     main()

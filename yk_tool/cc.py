@@ -65,8 +65,15 @@ class TongBuFile:
         # 公共检查次数
         self.checkTimes: int = 0
 
+    def check_main_dir(self):
+        """检查主目录文件"""
+        self.checkTimes += 1
+        for i in os.listdir(self.mainDir):
+            self._loop_dir_check1(os.sep, i)
+        self._del_file()
+
     # 检查删除
-    def del_file(self):
+    def _del_file(self):
         publicCheckTimes: int = self.checkTimes
         deleted: list[str] = []
         for k in self.cache:
@@ -90,27 +97,6 @@ class TongBuFile:
             self.cache.pop(k)
         pass
 
-    # 检查主目录文件
-    def check_main_dir(self):
-        self.checkTimes += 1
-        for i in os.listdir(self.mainDir):
-            self._loop_dir_check1(os.sep, i)
-
-        self.del_file()
-
-        now: str = time.strftime("%y-%m-%d %a %H:%M:%S", time.localtime())
-        print(
-            "\r===done====" + now,
-            end="",
-        )
-        #
-        title: str = now[0:12]
-        if self.title != title:
-            self.title = title
-            print(f"\033]0;{title}\007")
-
-        time.sleep(10)
-
     # 递归目录check
     def _loop_dir_check1(self, path: str, file: str):
         file1: str = path + file
@@ -131,7 +117,7 @@ class TongBuFile:
             if old is not None:
                 isCopy: bool = old.last_m_time != modifyTime
             if isCopy:
-                self.copy(file1, isFile, modifyTime)
+                self._copy(file1, isFile, modifyTime)
 
             self.cache[file1] = Cache(self.checkTimes, modifyTime)
             # 继续子目录
@@ -143,7 +129,7 @@ class TongBuFile:
             pass
 
     # 同步
-    def copy(self, fileOrDir: str, isFile: bool, modifyTime: float):
+    def _copy(self, fileOrDir: str, isFile: bool, modifyTime: float):
         for i in self.dirs:
             if isFile:
                 destModifyTime: float = 0.0
@@ -168,6 +154,17 @@ def main() -> NoReturn:
         a = TongBuFile()
         while True:
             a.check_main_dir()
+            now: str = time.strftime("%y-%m-%d %a %H:%M:%S", time.localtime())
+            print(
+                "\r===done====" + now,
+                end="",
+            )
+            #
+            title: str = now[0:12]
+            if a.title != title:
+                a.title = title
+                print(f"\033]0;{title}\007")
+            time.sleep(10)
     except FileNotFoundError as e:
         print(e.filename + " 文件路径错误,检查配置文件各项是否正确")
     except Exception as e:

@@ -11,8 +11,8 @@ def main():
     current_path = os.path.dirname(__file__)
     os.chdir(current_path)
     a = False
-    cA = {}
-    cB = {}
+    cA:dict[str,str] = {}
+    cB:dict[str,str] = {}
     with open("a.txt", "r") as f:
         while f:
             line = f.readline()
@@ -27,7 +27,6 @@ def main():
                 else:
                     cB[r[2][:-2]] = r[1]
                 pass
-    old = 0
     for i in cA:
         try:
             if cB[i] != cA[i]:
@@ -116,11 +115,11 @@ def main_work():
     filePath: str = "C:\\Users\\Administrator\\Downloads\\Sheet1.csv"
     with open(filePath, newline="", encoding="utf-8-sig") as csvfile:
         ret: dict[str, list[str]] = {}
-        exclude: list = ["", "周末", "请假", "事假"]
+        exclude: list[str] = ["", "周末", "请假", "事假"]
         row: list[str]  # [num,name,date,week,txt1,txt2,txt3...]
 
         for row in csv.reader(csvfile, delimiter=",", quotechar='"'):
-            oldRow: list = ret.get(row[3], [row[2], 0])
+            oldRow: list[str] = ret.get(row[3], [row[2], "0"])
             oldRow[1] = row[2]
             for field in row[4:]:
                 if field not in exclude and field not in oldRow:

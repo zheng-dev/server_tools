@@ -110,16 +110,11 @@ class TongBuFile:
         absFile1: str = self.mainDir + file1
         try:
             isFile: bool = os.path.isfile(absFile1)
-            if isFile:
-                modifyTime: float = os.path.getmtime(absFile1)
-            else:
-                modifyTime: float = os.path.getctime(absFile1)
-
+            modifyTime: float=os.path.getmtime(absFile1) if isFile else os.path.getctime(absFile1)
             # 是否同步,如None,文件时间晚于上次检查时间；
             old: None | Cache = self.cache.get(file1, None)
-            isCopy: bool = True
-            if old is not None:
-                isCopy: bool = old.last_m_time != modifyTime
+            isCopy:bool=False if old is None else  old.last_m_time != modifyTime
+
             if isCopy:
                 self._copy(file1, isFile, modifyTime)
 

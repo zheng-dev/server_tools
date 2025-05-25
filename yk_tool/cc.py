@@ -5,7 +5,7 @@
 # Date: 2025-03-31
 # decription:对比目录 且以主目录为准进行文件同步-支持忽略指定路径文件
 
-from typing import NoReturn, NamedTuple
+from typing import NoReturn, NamedTuple,TypedDict
 import os, time, shutil
 
 
@@ -13,6 +13,10 @@ class Cache(NamedTuple):
     checked_times: int  # 文件经历检查次数-作删除判定
     last_m_time: float  # 上次修改时间-作修改判定
 
+class Cfg(TypedDict):
+    mainDir:str # 主目录
+    dirs:list[str] #附目录
+    ignores:list[str] #忽略文件列表
 
 # 文件对比同步（从主目录 对比到 附目录）
 class TongBuFile:
@@ -30,7 +34,7 @@ class TongBuFile:
         cfgFile: str = ".cc.cnf"
         try:
             with open(cfgFile, "r+", -1, utf) as f:
-                cfg: dict[str,list[str]|str] = json.load(f)
+                cfg: Cfg = json.load(f)
                 # 主目录
                 if type(cfg["mainDir"]) is str and type(cfg["dirs"]) is list and type(cfg["ignores"]) is list:
                     self.mainDir: str = cfg["mainDir"]

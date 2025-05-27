@@ -5,7 +5,7 @@
 # Date: 2025-03-31
 # decription:对比目录 且以主目录为准进行文件同步-支持忽略指定路径文件
 
-from typing import NoReturn, NamedTuple,TypedDict
+from typing import NoReturn, NamedTuple, TypedDict
 import os, time, shutil
 
 
@@ -13,10 +13,12 @@ class Cache(NamedTuple):
     checked_times: int  # 文件经历检查次数-作删除判定
     last_m_time: float  # 上次修改时间-作修改判定
 
+
 class Cfg(TypedDict):
-    mainDir:str # 主目录
-    dirs:list[str] #附目录
-    ignores:list[str] #忽略文件列表
+    mainDir: str  # 主目录
+    dirs: list[str]  # 附目录
+    ignores: list[str]  # 忽略文件列表
+
 
 # 文件对比同步（从主目录 对比到 附目录）
 class TongBuFile:
@@ -36,14 +38,18 @@ class TongBuFile:
             with open(cfgFile, "r+", -1, utf) as f:
                 cfg: Cfg = json.load(f)
                 # 主目录
-                if type(cfg["mainDir"]) is str and type(cfg["dirs"]) is list and type(cfg["ignores"]) is list:
+                if (
+                    type(cfg["mainDir"]) is str
+                    and type(cfg["dirs"]) is list
+                    and type(cfg["ignores"]) is list
+                ):
                     self.mainDir: str = cfg["mainDir"]
                     # 绝对路径目录列表 附目录
                     self.dirs: list[str] = cfg["dirs"]
                     # 忽略文件列表
                     self.ignores: list[str] = cfg["ignores"]
                 else:
-                    raise(FileNotFoundError("value_err"))    
+                    raise (FileNotFoundError("value_err"))
         except FileNotFoundError:
             with open(cfgFile, "w+", -1, utf) as f:
                 json.dump(
@@ -110,10 +116,12 @@ class TongBuFile:
         absFile1: str = self.mainDir + file1
         try:
             isFile: bool = os.path.isfile(absFile1)
-            modifyTime: float=os.path.getmtime(absFile1) if isFile else os.path.getctime(absFile1)
+            modifyTime: float = (
+                os.path.getmtime(absFile1) if isFile else os.path.getctime(absFile1)
+            )
             # 是否同步,如None,文件时间晚于上次检查时间；
             old: None | Cache = self.cache.get(file1, None)
-            isCopy:bool=False if old is None else  old.last_m_time != modifyTime
+            isCopy: bool = True if old is None else old.last_m_time != modifyTime
 
             if isCopy:
                 self._copy(file1, isFile, modifyTime)
@@ -147,6 +155,7 @@ class TongBuFile:
                     pass
         pass
 
+
 def main() -> NoReturn:
     """命令行入口"""
     try:
@@ -170,6 +179,7 @@ def main() -> NoReturn:
         print(e.args, "检查配置文件各项是否正确")
     finally:
         os._exit(1)
+
 
 if __name__ == "__main__":
     main()

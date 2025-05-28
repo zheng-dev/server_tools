@@ -133,6 +133,7 @@ class TongBuFile:
                     self._loop_dir_check1(file1 + os.sep, i)
         except:
             # 文件、目录 中途被del
+            print("file_err", absFile1)
             pass
 
     # 同步

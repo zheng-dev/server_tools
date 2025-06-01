@@ -6,8 +6,10 @@
 # decription: 分析event用时日志
 from . import progress as p
 
-
+event_info=dict[str,tuple[int,int,int,int,str]]
+"""key=事件mf, val=(总次数, 100m的次数, 平均用时, 最大用时, 原日志)"""
 class Event:
+    @staticmethod
     def analyse(args: list[str]):
         f = "event.txt"
         try:
@@ -15,13 +17,14 @@ class Event:
         except:
             pass
 
-        (lineNum, condLineNum, kvList) = Event.clear_data(f)
+        (lineNum, condLineNum, kvList)= Event.clear_data(f)
         print("总条数{0};100ms的条数{1}".format(lineNum, condLineNum))
         Event.save_ret(kvList)
         return
 
     ##结果存入csv
-    def save_ret(kvList: dict):
+    @staticmethod
+    def save_ret(kvList: event_info):
         import csv
 
         if {} != dict:
@@ -37,9 +40,11 @@ class Event:
                         "最大用时日志",
                     ]
                 )
+                
+
                 # writer.writerow(['事件mf | 总次数 | 100m的次数 | 平均用时 | 最大用时 | 原日志'])
                 for key in kvList:
-                    oldTimes, old100Times, oldAccMs, oldMaxMs, oldLine = kvList.get(key)
+                    oldTimes, old100Times, oldAccMs, oldMaxMs, oldLine = kvList.get(key,(0,0,0,0,""))
                     writer.writerow(
                         [
                             key,
@@ -55,22 +60,23 @@ class Event:
 
     ##整理出数据
     ##ret:(lineNum,condLineNum,kvList)
-    def clear_data(logFile: str) -> tuple[int, int, dict]:
+    @staticmethod
+    def clear_data(logFile: str) -> tuple[int, int, event_info]:
         with open(logFile, "r", -1, "utf8") as fPtr:
             lineNum = 0  # 总条数
             condLineNum = 0  # 满足过虑条件行数
-            kvList = {}  # 结果
+            kvList:event_info = {}  # 结果
             pro = p.Progress()
             while fPtr:
                 pro.progress_no_sum()
-                line = fPtr.readline()
+                line:str = fPtr.readline()
                 if line == "":
                     break
                 lineNum += 1
                 uSIndex = line.find("{use_ms,")
                 if uSIndex >= 0:
                     uEIndex = line.find("}", uSIndex)
-                    useMs = int(line[uSIndex + 8 : uEIndex])
+                    useMs:int = int(line[uSIndex + 8 : uEIndex])
                     if useMs < 100:
                         continue  # 小于100ms的不统计
 
@@ -81,11 +87,11 @@ class Event:
                     mfEIndex2 = line.find(",", mfEIndex1 + 1)
                     mfStr = line[mfSIndex:mfEIndex2] + "}"
 
-                    oldRow = kvList.get(mfStr, 0)
+                    oldRow = kvList.get(mfStr)
                     # 统一上100ms的
-                    reach100 = 0 if useMs > 100 else 1
+                    reach100:int = 0 if useMs > 100 else 1
 
-                    if oldRow == 0:
+                    if oldRow is None:
                         # (总次数,总用时ms,上100ms的总次数,单次最大用时ms,最大ms时的line)
                         kvList[mfStr] = (1, reach100, useMs, useMs, line)
                     else:

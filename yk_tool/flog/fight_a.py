@@ -6,13 +6,20 @@
 # decription: 分析战报日志
 import os
 
+from typing import NamedTuple,Callable
+class SkillInfo(NamedTuple):
+    oLine:str #技能信息
+    oEffList:list[str] #期间效果sid
+    useTime:str #技能用时
+skill_dict=dict[str,list[SkillInfo]]
+"""key=Skill_sid, value=信息列表"""
 
 class AnalyseFALog:
-    __tab_skill_eff_do: dict[str, list[tuple[str, list, int]]] = (
+    __tab_skill_eff_do: skill_dict = (
         {}
     )  # 技能生效触发的效果sid
     __fileName = ""
-
+    @staticmethod
     def analyse(argsv: list[str]):
         a = AnalyseFALog(argsv[2])
 
@@ -43,7 +50,7 @@ class AnalyseFALog:
 
         with open(self.__fileName, "r", -1, "utf8") as fPtr:
             currSkill = ""
-            ret: dict[str, list[tuple[str, list, int]]] = {}
+            ret:  skill_dict = {}
             while fPtr:
                 line = fPtr.readline()
                 if line == "":
@@ -52,30 +59,30 @@ class AnalyseFALog:
                     i1 = line.find(flagSkillSid)
                     i2 = line.find(",", i1)
                     currSkill = line[i1 + flagSidLen : i2]  # 技能sid
-                    list1: list = ret.get(currSkill, [])
-                    list1.append((line, [], -1))
+                    list1: list[SkillInfo] = ret.get(currSkill, [])
+                    list1.append(SkillInfo(line, [], "-1"))
                     ret[currSkill] = list1
                 elif flagEffS in line and currSkill != "":
                     i1 = line.find(flagEffS)
                     i2 = line.find(flagEffE, i1)
 
-                    list1: list[(str, list, int)] = ret.get(currSkill, [("", [], 0)])
+                    list1: list[SkillInfo] = ret.get(currSkill, [SkillInfo("", [], "0")])
                     nowIndex = len(list1) - 1
-                    r: tuple[str, list, int] = list1[nowIndex]
+                    r: SkillInfo = list1[nowIndex]
                     (oLine, oEffL, u) = r
                     row1: str = line[i1 + flagEffSLen : i2]
                     row2: str = row1 if row1[-1] != "}" else row1[:-1]
                     oEffL.append(row2)
-                    list1[nowIndex] = (oLine, oEffL, u)
+                    list1[nowIndex] = SkillInfo(oLine, oEffL, u)
                 elif flagSkillE in line:
-                    list1: list = ret.get(currSkill, [])
+                    list1: list[SkillInfo] = ret.get(currSkill, [])
                     nowIndex = len(list1) - 1
                     (oLine, oEffList, u) = list1[nowIndex]
                     i1 = line.find(flagTime)
                     i2 = line.find(flagTime, i1 + flagTimeLen)
                     i4 = line.find(",", i2 + flagTimeLen)
                     useTime = line[i2 + flagTimeLen : i4]  # 耗时
-                    list1[nowIndex] = (oLine, oEffList, useTime)
+                    list1[nowIndex] = SkillInfo(oLine, oEffList, useTime)
                     currSkill = ""  # 重置
             self.__tab_skill_eff_do = ret
 
@@ -94,11 +101,11 @@ class AnalyseFALog:
                 )
                 for k in ret:
 
-                    row = [""] * 20
+                    row:list[str] = [""] * 20
                     for oLine, oEffList, useTime in ret[k]:
                         row[0] = f"\t{k}"
                         row[1] = useTime
-                        row[2] = len(oEffList)
+                        row[2] = str(len(oEffList))
                         row[3] = oLine[:-49]
                         row[4] = f"\t{','.join(oEffList)}"
                         writer.writerow(row)
@@ -107,14 +114,14 @@ class AnalyseFALog:
 ##分析战斗buff
 class AnalyseFightBuff:
     t_buff_uid = []
-    t_buff = []
-    t_add_buff = []
+    t_buff:list[str] = []
+    t_add_buff:list[str] = []
     max_line = 0  # 最大行数
-
+    @staticmethod
     def analyse():
         a = AnalyseFightBuff()
 
-        def l(line: str) -> list[str, str, str, str]:
+        def l(line: str) -> list[str]:
             ret = line[1:].split(",")
             ret[2] = ret[2][1:]
             ret[3] = ret[3][:-2]
@@ -199,7 +206,7 @@ class AnalyseFightBuff:
         os.chdir("../")
 
     ##
-    def do(self, dir: str, head: list[str], key: str, rowFun=None) -> None:
+    def do(self, dir: str, head: list[str], key: str, rowFun:None|Callable[[str],list[str]]=None) -> None:
         os.chdir(dir)
         f = os.listdir("./")
         print(f"==={f}")

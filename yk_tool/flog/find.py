@@ -15,6 +15,9 @@ class Find:
     currPage = 1  # 当前页码
     rowNum4Page = 20  # 每页显示条数
     page = []  # 当前页内容
+    @staticmethod
+    def go(argv:list[str]):
+        (Find()).find(argv)
 
     def find(self, argv: list[str]):
         import glob, time

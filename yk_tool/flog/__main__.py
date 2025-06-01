@@ -6,9 +6,11 @@
 # decription:
 
 import sys
+from typing import Callable,Any
 from . import find, event, fight_a, d_line_cmd
 
-
+enter_func=Callable[[list[str]],None]
+"""入口函数 fun(list[str])->None"""
 def main() -> None:
     help = """
 从匹配的文件中查找内容，显示所在文件名和行数
@@ -21,15 +23,14 @@ py -m flog -fxe event.txt
                            
              """
     sig_hand()
+    input()
     if len(sys.argv) > 1:
-        if sys.argv[1] == "-line":
-            d_line_cmd(sys.argv)
-        elif sys.argv[1] == "-fxa":
-            fight_a.AnalyseFALog.analyse(sys.argv)
-        elif sys.argv[1] == "-fxe":
-            event.Event.analyse(sys.argv)
-        else:
-            find.Find().find(sys.argv)
+        cmdL:dict[str,enter_func]={
+        "-line":d_line_cmd,
+        "-fxa":fight_a.AnalyseFALog.analyse,
+        "-fxe":event.Event.analyse,
+        }
+        cmdL.get(sys.argv[1],find.Find.go)(sys.argv)
     else:
         print(help)
 
@@ -38,7 +39,7 @@ py -m flog -fxe event.txt
 def sig_hand():
     import signal
 
-    def a1(a, b):
+    def a1(_a:int, _:Any):
         print("ctr+c exit")
         sys.exit(0)
 

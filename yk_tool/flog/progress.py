@@ -11,7 +11,7 @@ class Progress:
     __rate = 0
     __sTime = 0
 
-    def __init__(self, max1: int = None, rate=10000) -> None:
+    def __init__(self, max1: int = 0, rate:int=10000) -> None:
         import time
 
         self.__rate = rate
@@ -21,7 +21,7 @@ class Progress:
 
     ##进度-有总量的
     def Progress(self):
-        curr = round(self.currIndex / self.max * self.__rate)
+        curr = round(self.currIndex / self.max * self.__rate) if self.max > 0 else 0
         print("\r" + "#" * curr + "_" * (self.__rate - curr), end="")
 
     ##无总量的,每100数刷一下

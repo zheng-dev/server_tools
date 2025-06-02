@@ -27,7 +27,7 @@ class Event:
     def save_ret(kvList: event_info):
         import csv
 
-        if {} != dict:
+        if {} != kvList:
             with open("event.csv", "w+", -1, "utf-8-sig") as ePtr:
                 writer = csv.writer(ePtr, quoting=csv.QUOTE_ALL, lineterminator="\n")
                 writer.writerow(
@@ -50,7 +50,7 @@ class Event:
                             key,
                             oldTimes,
                             old100Times,
-                            round(oldAccMs / oldTimes),
+                            round(oldAccMs / oldTimes) if oldTimes > 0 else 0,
                             oldMaxMs,
                             oldLine.strip(),
                         ]
@@ -67,11 +67,8 @@ class Event:
             condLineNum = 0  # 满足过虑条件行数
             kvList:event_info = {}  # 结果
             pro = p.Progress()
-            while fPtr:
+            for line in fPtr:
                 pro.progress_no_sum()
-                line:str = fPtr.readline()
-                if line == "":
-                    break
                 lineNum += 1
                 uSIndex = line.find("{use_ms,")
                 if uSIndex >= 0:
@@ -89,7 +86,7 @@ class Event:
 
                     oldRow = kvList.get(mfStr)
                     # 统一上100ms的
-                    reach100:int = 0 if useMs > 100 else 1
+                    reach100:int = 1 if useMs >= 100 else 0
 
                     if oldRow is None:
                         # (总次数,总用时ms,上100ms的总次数,单次最大用时ms,最大ms时的line)

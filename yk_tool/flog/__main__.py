@@ -9,8 +9,6 @@ import sys
 from typing import Callable,Any
 from . import find, event, fight_a, d_line_cmd
 
-enter_func=Callable[[list[str]],None]
-"""入口函数 fun(list[str])->None"""
 def main() -> None:
     help = """
 从匹配的文件中查找内容，显示所在文件名和行数
@@ -23,9 +21,9 @@ py -m flog -fxe event.txt
                            
              """
     sig_hand()
-    input()
     if len(sys.argv) > 1:
-        cmdL:dict[str,enter_func]={
+        # Callable[[list[str]],None] 即 fun(list[str])->None
+        cmdL:dict[str,Callable[[list[str]],None]]={
         "-line":d_line_cmd,
         "-fxa":fight_a.AnalyseFALog.analyse,
         "-fxe":event.Event.analyse,

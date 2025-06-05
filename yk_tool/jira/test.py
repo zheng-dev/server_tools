@@ -5,30 +5,34 @@
 # Date: 2024-09-06
 # decription:测试协程
 
+from http.client import HTTPResponse
 import asyncio, time
 from urllib.request import urlopen
-from types import FunctionType
 from multiprocessing import Pool
+import functools
+from typing import Callable,TypeVar,Any
+F=TypeVar('F', bound=Callable[..., Any])
 
 
 # 计时
-def calc_time(fun1: FunctionType):
-    def wrap(*args, **kargs):
+def calc_time(fun1: F)->F:
+    @functools.wraps(fun1)
+    def wrap(*args:Any, **kargs:Any)-> Any:
         s1 = time.time()
         ret = fun1(*args, **kargs)
         s2 = time.time()
         print(f"{fun1.__name__},timeUse {s2-s1}")
         return ret
 
-    return wrap
+    return wrap # type: ignore
 
 
 @calc_time
-def get_url(url: str) -> str:
+def get_url(url: str) -> HTTPResponse | str:
     try:
         # 同步函数不会让出线程,会阻塞.此处只有换专门的异步io函数,以具有让出线程执行的特性
         r = urlopen(url, timeout=5.0)
-    except:
+    except Exception:
         r = "0"
     return r
 
@@ -46,7 +50,8 @@ async def crtns_main():
     # 同步io函数在多个任务中也会把线程阻塞，所以两个任务的总用时是累长成了双倍
     t1 = asyncio.create_task(test(u))
     t2 = asyncio.create_task(test(u))
-    l = await asyncio.gather(t1, t2)
+    l: tuple[HTTPResponse | str, HTTPResponse | str] = await asyncio.gather(t1, t2)
+    print("crtns_main=", l)
     # await t1
     # await t2
     # done,pending=await asyncio.wait({test(u),test(u)},return_when=asyncio.ALL_COMPLETED)
@@ -58,8 +63,11 @@ def thread_test():
     import threading
 
     # 多线程会被时间片切碎，两个的总用时是重叠的，不会累长
-    t1 = threading.Thread(target=test, args=("http://2.2.2.2",))
-    t2 = threading.Thread(target=test, args=("http://2.2.2.3",))
+    def sync_test(url: str) -> None:
+        asyncio.run(test(url))
+
+    t1 = threading.Thread(target=sync_test, args=("http://2.2.2.2",))
+    t2 = threading.Thread(target=sync_test, args=("http://2.2.2.3",))
     t1.start()
     t2.start()
     t1.join()
@@ -140,11 +148,72 @@ class WG(tkinter.Tk):
 
 
 def main():
-    WG().display().mainloop()
+    # WG().display().mainloop()
 
     from pathlib import Path
 
-    print(Path("a.ico").read_bytes())
+    # print(Path("a.ico").read_bytes())
+    # import subprocess as sp
+
+    # p = sp.run(
+    #     ["powershell", "-Command", "ps", "|", "Format-List", "*"], stdout=sp.PIPE
+    # )
+    # p2 = p.stdout.split(b"\r\n")
+    # print(len(p2))
+    # for i in p2:
+    #     print(i)
+
+    #1 扫描主目录，处理增改、生成索引信息表
+    #2 对比上次索引信息表和第1步的索引信息表做删除判定
+    #3 修正上次索引信息表
+    q:bool=False
+    import signal
+    def s(s,frame):
+        nonlocal q
+        q=True
+        print('===wait=')
+
+    signal.signal(signal.SIGINT,s)
+    import atexit
+    def clean_up():
+        print('==at_exit')
+        with open('a.txt','w') as f:
+            f.write('atext')
+    atexit.register(clean_up)    
+    while True:
+        if q:
+            print('exit')
+            return
+        else:    
+            print('r....')    
+            time.sleep(10)
+    # import shelve,time
+    # s=shelve.open('.test',flag='c',writeback=True)
+    # print(s)
+    # t={'a':3}
+    # print(t)
+    # key:str=time.strftime("%Y%m%d%H%M%S",time.localtime())
+    # s[key]={'int':10,'float':9.5,'s':"okk",'t':key}
+    # print(key)
+    # for keyCur in s:
+    #     print(keyCur,s[keyCur])
+    # s.close()    
+
+    print(hash(__file__),__file__)
+
+
+    # name: str = "go"
+    # while name.strip() != "exit":
+    #     name: str = input("input:")
+    #     print(name)
+    #     match name.strip():
+    #         case "e":
+    #             print("m_3")
+    #         case "a":
+    #             print("m_a")
+    #         case _:
+    #             print("__")
+
     pass
 
 

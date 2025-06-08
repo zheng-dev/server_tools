@@ -163,7 +163,7 @@ def main() -> NoReturn:
         a = TongBuFile()
         while True:
             a.check_main_dir()
-            now: str = time.strftime("%y-%m-%d %a %H:%M:%S", time.localtime())
+            now: str = time.strftime("%y-%m-%d %a %H:%M:%S")
             print(
                 "\r===done====" + now,
                 end="",

@@ -30,7 +30,7 @@ class BinFile:
     def __init__(self) -> None:
         self.fileName: str = None
         # 是否有src血源字段
-        self.is_have_src: bool = False
+        self.is_have_src: bool = True
 
     def __del__(self):
         logging.info("close")
@@ -249,7 +249,8 @@ def find_window(parent, findStr: str, matchStr: str):
 ## 时间工具
 class TimeToolWindow(tkinter.Tk):
     GAME = "game>"
-    cmdHelp = f"可输入如下cmd运行:\n    按指定时间启服: {GAME}D:\\zzc\\game_alpha>2024-11-03 20:46:00\n    执行4则运算: 6+6"
+    UNICODE = "unicode>"
+    cmdHelp = f"可输入如下cmd运行:\n    按指定时间启服: {GAME}D:\\zzc\\game_alpha>2024-11-03 20:46:00\n    执行4则运算: 6+6\n    {UNICODE}编码"
 
     def display(self):
         self.logNum: int = 0
@@ -306,6 +307,12 @@ class TimeToolWindow(tkinter.Tk):
             rets = self.cmdHelp + "\n"
         elif cmdStr.startswith(self.GAME):
             rets = f"start>{self.time_start_game(cmdStr)}\n"
+        elif cmdStr.startswith(self.UNICODE):
+            [_, byteStr] = cmdStr.split(">")
+            byte_sequence = [int(x) for x in byteStr.split(",")]
+            bytes_data = bytes(byte_sequence)
+            decoded_text = bytes_data.decode("utf-8")
+            rets = f"{decoded_text}"
         else:
             try:
                 str_check(cmdStr)

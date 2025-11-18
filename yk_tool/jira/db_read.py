@@ -250,7 +250,7 @@ def find_window(parent, findStr: str, matchStr: str):
 class TimeToolWindow(tkinter.Tk):
     GAME = "game>"
     UNICODE = "unicode>"
-    cmdHelp = f"可输入如下cmd运行:\n    按指定时间启服: {GAME}D:\\zzc\\game_alpha>2024-11-03 20:46:00\n    执行4则运算: 6+6\n    {UNICODE}编码"
+    cmdHelp = f"可输入如下cmd运行:\n    按指定时间启服: {GAME}D:\\zzc\\game_alpha>2024-11-03 20:46:00\n    执行4则运算: 6+6\n    {UNICODE}编码显示"
 
     def display(self):
         self.logNum: int = 0

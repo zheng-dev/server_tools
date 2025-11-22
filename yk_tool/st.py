@@ -115,7 +115,7 @@ def main_work():
     filePath: str = "C:\\Users\\Administrator\\Downloads\\Sheet1.csv"
     with open(filePath, newline="", encoding="utf-8-sig") as csvfile:
         ret: dict[str, list[str]] = {}
-        exclude: list[str] = ["", "周末", "请假", "事假", "调休", "国庆"]
+        exclude: list[str] = ["", "周末", "请假", "事假", "调休", "国庆", "通宵"]
         row: list[str]  # [num,name,date,week,txt1,txt2,txt3...]
 
         for row in csv.reader(csvfile, delimiter=",", quotechar='"'):

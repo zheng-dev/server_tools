@@ -25,13 +25,20 @@ class FileCreateHandler(FileSystemEventHandler):
 def main():
     event_handler = FileCreateHandler()
     observer = Observer()
-    list1 = [f"e:/", f"c:/"]
+    list1 = [
+        f"c:/",
+        f"d:/",
+        f"e:/",
+        f"f:/",
+        f"g:/",
+        #  f"i:/"
+    ]
     for i in list1:
         observer.schedule(event_handler, i, recursive=True)
 
     # 启动监控
     observer.start()
-    print(f"开始监控目录:  (按 Ctrl+C 停止)")
+    print(f"开始监控目录:  (按 Ctrl+C 停止)", list1)
 
     try:
         while True:

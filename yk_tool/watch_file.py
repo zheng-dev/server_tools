@@ -5,6 +5,7 @@
 # Date: 2026-01-09
 # decription: 文件目录变动监听
 import time
+import datetime
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -13,13 +14,15 @@ class FileCreateHandler(FileSystemEventHandler):
     """自定义事件处理器，只处理创建事件"""
 
     def on_created(self, event):
+        a = datetime.datetime.now().strftime("%m%d %H:%M:%S")
         if event.is_directory:
-            print(f"[目录创建] {event.src_path}")
+            print(f"{a}[add目录] {event.src_path}")
         else:
-            print(f"[文件创建] {event.src_path}")
+            print(f"{a}[add文件] {event.src_path}")
 
     def on_deleted(self, event):
-        print(f"[del操作] {event.src_path}")
+        a = datetime.datetime.now().strftime("%m%d %H:%M:%S")
+        print(f"{a}[del操作] {event.src_path}")
 
 
 def main():

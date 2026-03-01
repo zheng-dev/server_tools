@@ -6,6 +6,7 @@
 # decription: 文件目录变动监听
 import time
 import datetime
+import os
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -28,20 +29,16 @@ class FileCreateHandler(FileSystemEventHandler):
 def main():
     event_handler = FileCreateHandler()
     observer = Observer()
-    list1 = [
-        f"c:/",
-        f"d:/",
-        f"e:/",
-        f"f:/",
-        f"g:/",
-        #  f"i:/"
-    ]
+    list1 = [f"c:/", f"d:/", f"e:/", f"f:/", f"g:/", f"i:/"]
+    valid = []
     for i in list1:
-        observer.schedule(event_handler, i, recursive=True)
+        if os.path.isdir(i):
+            valid.append(i)
+            observer.schedule(event_handler, i, recursive=True)
 
     # 启动监控
     observer.start()
-    print(f"开始监控目录:  (按 Ctrl+C 停止)", list1)
+    print(f"开始监控目录:  (按 Ctrl+C 停止)", valid)
 
     try:
         while True:

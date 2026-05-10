@@ -5,7 +5,7 @@
 # Date: 2024-09-29
 # decription: db增量bin的读、增
 
-import logging, struct, ahocorasick
+import logging, struct, ahocorasick, os, sys, subprocess
 from io import FileIO
 from erlang import *
 from datetime import *
@@ -24,6 +24,14 @@ if __name__ == "__main__":
     )
 
 
+# Bin 文件格式常量
+BLOCK_HEADER_BYTES = 6         # blockSize(4) + keySize(2)
+VAL_HEADER_BYTES = 14          # vsn(4) + time(6) + dataLen(4)
+OVERHEAD_EXCL_BLOCKLEN = 18    # 不含blockLen和数据: keyLen(2)+key+src(2)+vsn(4)+time(6)+dataLen(4)
+VSN_BYTES = 4                  # 版本字段长度
+ERLANG_ATOM_TAG = 131          # Erlang atom 标识
+
+
 class BinFile:
     """开关bin文件的上下文件用"""
 
@@ -39,7 +47,6 @@ class BinFile:
         self.fileName: str = file  # 表追加kv时要用此找目录
         with open(file, "rb") as f:
             return self.get_row(f)
-        return ""
 
     def get_row(self, fileHand: FileIO) -> str:
         """取出N条数据\n已经格式化成str\n多条以换行分隔"""
@@ -51,15 +58,15 @@ class BinFile:
         row_num: int = 0  # 行计数
         while True:
             key = None
-            blockBin: bytes = fileHand.read(6)
-            if len(blockBin) != 6:
+            blockBin: bytes = fileHand.read(BLOCK_HEADER_BYTES)
+            if len(blockBin) != BLOCK_HEADER_BYTES:
                 break
             blockSize, keySize = struct.unpack(b">IH", blockBin)
             blockValBin: bytes = fileHand.read(blockSize - 2)
             row_num += 1
             if keySize == 0:
                 # 根据term来算长度  已del块
-                if 131 == blockValBin[0]:
+                if ERLANG_ATOM_TAG == blockValBin[0]:
                     idx, key = _binary_to_term(1, blockValBin)
                 else:
                     continue  # 无key
@@ -71,11 +78,11 @@ class BinFile:
                 idx = idx + 2
                 (src,) = struct.unpack(b">H", blockValBin[idx : idx + 2])
 
-            valHead = blockValBin[idx : idx + 14]
+            valHead = blockValBin[idx : idx + VAL_HEADER_BYTES]
             (vsn,) = struct.unpack(b">I", valHead[0:4])
-            utc, valLen = struct.unpack(b">QI", bytes([0, 0]) + valHead[4:14])
+            utc, valLen = struct.unpack(b">QI", bytes([0, 0]) + valHead[VSN_BYTES:VAL_HEADER_BYTES])
 
-            bContext = blockValBin[idx + 14 :]
+            bContext = blockValBin[idx + VAL_HEADER_BYTES :]
             val = None
             try:
                 if len(bContext) > 0:
@@ -96,13 +103,11 @@ class BinFile:
             }
             termStr += str(ext_info) + "\n\n"
 
-        self.hash = hash(termStr)
         return termStr
 
     def get_max_id_file(self) -> str:
         if self.fileName is None:
             raise (Exception("must_select_tab"))
-        import os
 
         tab: str = os.path.dirname(os.path.dirname(os.path.abspath(self.fileName)))
         # os.chdir(tab)
@@ -122,7 +127,7 @@ class BinFile:
         # steam文件格式为：[4字节块长+2字节键长（0表示空块）+键数据+2字节血源+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
         vsize = len(val)
         ksize = len(key)
-        blockSize = 22 - 4 + vsize + ksize  # 去掉4字节块长
+        blockSize = OVERHEAD_EXCL_BLOCKLEN + vsize + ksize  # 去掉4字节块长
         # db加载用的时间最新的
         time = struct.pack(b">Q", now_second() * 1000)
         r = struct.pack(b">IH", blockSize, ksize) + key
@@ -141,8 +146,6 @@ class BinFile:
             f.flush()
 
     def start_time_server(self, gPath: str, timeStr: str) -> str:
-        import os, sys
-
         try:
             files = os.listdir(gPath)
             if "db" not in files or "boot" not in files:
@@ -170,8 +173,7 @@ class BinFile:
             return f"改表时间失败-{a.args}"
         # 启服
         if sys.platform.startswith("win"):
-            # os.chdir(f"{gPath}{s}boot")
-            os.system(f"cd /d {gPath}{s}boot{s} && start start.bat")
+            subprocess.Popen(["cmd.exe", "/c", "start", "start.bat"], cwd=f"{gPath}{s}boot{s}")
             return "操作成功"
         else:
             return "时间修改成功-非window系统,需手动启动"
@@ -355,7 +357,7 @@ class TimeToolWindow(tkinter.Tk):
 
     # 打开表工具
     def db_tool(self):
-        DbWindow(self).display().fOTab()
+        DbWindow(self).display().choose_tab_file()
 
 
 class DbWindow(tkinter.Toplevel):
@@ -370,7 +372,7 @@ class DbWindow(tkinter.Toplevel):
         # self.iconphoto(True, tkinter.PhotoImage(None, data=PNG))
         self.binPath: str = ""
         self.binFile = BinFile()
-        self.dis: bool = False
+        self.is_save_panel_visible: bool = False
         self.lift()
 
     def display(self):
@@ -401,7 +403,7 @@ class DbWindow(tkinter.Toplevel):
 
         self.txtCont.configure(xscrollcommand=hscroll.set)
         hscroll.pack(side="bottom", fill=tkinter.X)
-        tkinter.Button(self.top, text="打开表文件", command=self.fOTab).pack(
+        tkinter.Button(self.top, text="打开表文件", command=self.choose_tab_file).pack(
             side="left"
         )
         tkinter.Button(self.top, text="表追加存kv", command=self.disp_save).pack(
@@ -449,14 +451,14 @@ class DbWindow(tkinter.Toplevel):
             tkinter.messagebox.showinfo("err", f"错误:{a.args}")
             pass
 
-        self.dis = False
+        self.is_save_panel_visible = False
         self.valKey.delete(1.0, tkinter.END)
         self.valSrc.delete(1.0, tkinter.END)
         self.valText.delete(1.0, tkinter.END)
         self.addFram.pack_forget()
 
     # 选表
-    def fOTab(self):
+    def choose_tab_file(self):
         selBinPath: str = askopenfilenames(
             parent=self, title="选择表bin文件(可多选)", initialdir=""
         )
@@ -469,22 +471,21 @@ class DbWindow(tkinter.Toplevel):
         sp.sort()
         self.txtCont.config()
         self.txtCont.delete(1.0, tkinter.END)
-        accStr: str = ""
+        accumulated_text: str = ""
         logging.info(f"read start1")
         for selP in sp:
             # self.txtCont.insert(tkinter.CURRENT, f"\n===={selP}=====\n")
-            accStr += f"\n===={selP}=====\n" + self.binFile.open_read(selP)
+            accumulated_text += f"\n===={selP}=====\n" + self.binFile.open_read(selP)
 
         # 单行大数据会卡--ScrolledText性能现状
-        lineNum: int = accStr.count("\n")
+        lineNum: int = accumulated_text.count("\n")
         logging.info(f"read start2a  num={lineNum}")
-        import os
 
         tab = os.path.basename(os.path.dirname(os.path.dirname(sp[0])))
         self.title(f"yk db表数据-->{tab}")
-        if len(accStr) // lineNum > DbWindow.size or lineNum > DbWindow.lineNum:
+        if len(accumulated_text) // lineNum > DbWindow.size or lineNum > DbWindow.lineNum:
             with open(f".{tab}.json", "w") as f:
-                f.write(accStr)
+                f.write(accumulated_text)
                 f.flush()
             logging.info(f"read start2a1=")
             rFile = f"{os.getcwd()}{os.sep}.{tab}.json"
@@ -495,7 +496,7 @@ class DbWindow(tkinter.Toplevel):
                 f"单条有大数据 或 总条数太多:{lineNum}，请打开\n{rFile}.json\n查看",
             )
         else:
-            self.txtCont.insert(tkinter.CURRENT, accStr)
+            self.txtCont.insert(tkinter.CURRENT, accumulated_text)
             wordColor: list = [
                 ("val", "red", ""),
                 ("key", "red", ""),
@@ -514,8 +515,8 @@ class DbWindow(tkinter.Toplevel):
 
     # 显示保存界面
     def disp_save(self):
-        if not self.dis:
-            self.dis = True
+        if not self.is_save_panel_visible:
+            self.is_save_panel_visible = True
             self.valKey.insert(1.0, "放入key串")
             self.valSrc.insert(1.0, "放入src整数")
             self.valText.insert(1.0, "放入value串")
@@ -524,8 +525,6 @@ class DbWindow(tkinter.Toplevel):
 
 def get_resource_path(relative_path):
     """获取资源文件绝对路径，用于打包后的程序访问资源文件"""
-    import sys, os
-
     try:
         # PyInstaller 创建的临时文件夹，存放资源文件
         base_path = sys._MEIPASS

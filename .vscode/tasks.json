@@ -16,7 +16,7 @@
                 "showReuseMessage": true,
                 "clear": false
             },
-            "command": "& .venv\\Scripts\\Activate.ps1; cd jira\\.desk; py ..\\db_read.py"
+            "command": "& .venv\\Scripts\\Activate.ps1; cd .local; py ..\\jira\\db_read.py"
         },
         {
             "label": "oc",

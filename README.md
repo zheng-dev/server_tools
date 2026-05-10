@@ -38,7 +38,7 @@ export PYTHONPATH=/data/game_server/script
 #查看设置结果
 py -c "import sys; print(sys.path)"
 #临时设置 
-py -c "import sys;sys.path.append('F:\server_tools\yk_tool');print(sys.path)"
+py -c "import sys;sys.path.append('F:\server_tools');print(sys.path)"
 ```
 
 镜像地址
@@ -77,3 +77,8 @@ vscode代码片段
 	}
 ]    
 ```
+
+关于移动venv目录后
+------------------
+Windows 上 venv 创建的 pip.exe / pip3.exe 等入口文件内部写死了原来 python.exe 的绝对路径。移动目录后路径就不对了,用如下命令重新生成pip
+`python -m pip install --upgrade pip --force-reinstall`

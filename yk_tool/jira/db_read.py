@@ -39,6 +39,8 @@ class BinFile:
         self.fileName: str = None
         # 是否有src血源字段
         self.is_have_src: bool = True
+        # 文件格式: "variable" 变长 / "fixed" 定长
+        self.format_type: str = "variable"
 
     def __del__(self):
         logging.info("close")
@@ -50,46 +52,65 @@ class BinFile:
 
     def get_row(self, fileHand: FileIO) -> str:
         """取出N条数据\n已经格式化成str\n多条以换行分隔"""
-        # TODO 定长文件格式为：[2字节键长+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
-        # TODO 变长文件格式为：[4字节块长+2字节键长（0表示空块）+键数据+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
-        # steam文件格式为：[4字节块长+2字节键长（0表示空块）+键数据+2字节血源+4字节版本（0表示已删除）+6字节时间+4字节数据长度+数据]
         termStr: str = ""
         fileHand.seek(0)
         row_num: int = 0  # 行计数
         while True:
-            key = None
-            blockBin: bytes = fileHand.read(BLOCK_HEADER_BYTES)
-            if len(blockBin) != BLOCK_HEADER_BYTES:
-                break
-            blockSize, keySize = struct.unpack(b">IH", blockBin)
-            blockValBin: bytes = fileHand.read(blockSize - 2)
-            row_num += 1
-            if keySize == 0:
-                # 根据term来算长度  已del块
-                if ERLANG_ATOM_TAG == blockValBin[0]:
-                    idx, key = _binary_to_term(1, blockValBin)
+            if self.format_type == "variable":
+                # 变长: [4字节块长 + 2字节键长 + 键数据 + 2字节血源(可选) + 4字节版本 + 6字节时间 + 4字节数据长度 + 数据]
+                key = None
+                blockBin: bytes = fileHand.read(BLOCK_HEADER_BYTES)
+                if len(blockBin) != BLOCK_HEADER_BYTES:
+                    break
+                blockSize, keySize = struct.unpack(b">IH", blockBin)
+                blockValBin: bytes = fileHand.read(blockSize - 2)
+                row_num += 1
+                if keySize == 0:
+                    if ERLANG_ATOM_TAG == blockValBin[0]:
+                        idx, key = _binary_to_term(1, blockValBin)
+                    else:
+                        continue
                 else:
-                    continue  # 无key
+                    idx, key = _binary_to_term(1, blockValBin)
+                src: int = 1
+                if self.is_have_src:
+                    idx = idx + 2
+                    (src,) = struct.unpack(b">H", blockValBin[idx : idx + 2])
+                valHead = blockValBin[idx : idx + VAL_HEADER_BYTES]
+                (vsn,) = struct.unpack(b">I", valHead[0:4])
+                utc, valLen = struct.unpack(b">QI", bytes([0, 0]) + valHead[VSN_BYTES:VAL_HEADER_BYTES])
+                bContext = blockValBin[idx + VAL_HEADER_BYTES :]
             else:
-                idx, key = _binary_to_term(1, blockValBin)
-            # 开关是否有src 血源
-            src: int = 1
-            if self.is_have_src:
-                idx = idx + 2
-                (src,) = struct.unpack(b">H", blockValBin[idx : idx + 2])
+                # 定长: [2字节键长 + 键数据 + 4字节版本 + 6字节时间 + 4字节数据长度 + 数据]
+                keySizeBin: bytes = fileHand.read(2)
+                if len(keySizeBin) != 2:
+                    break
+                (keySize,) = struct.unpack(b">H", keySizeBin)
+                row_num += 1
 
-            valHead = blockValBin[idx : idx + VAL_HEADER_BYTES]
-            (vsn,) = struct.unpack(b">I", valHead[0:4])
-            utc, valLen = struct.unpack(b">QI", bytes([0, 0]) + valHead[VSN_BYTES:VAL_HEADER_BYTES])
+                keyBin: bytes = fileHand.read(keySize) if keySize > 0 else b""
+                if keySize > 0 and len(keyBin) != keySize:
+                    break
 
-            bContext = blockValBin[idx + VAL_HEADER_BYTES :]
+                key = None
+                if keySize > 0:
+                    _, key = _binary_to_term(1, keyBin)
+
+                valHead = fileHand.read(VAL_HEADER_BYTES)
+                if len(valHead) != VAL_HEADER_BYTES:
+                    break
+                (vsn,) = struct.unpack(b">I", valHead[0:4])
+                utc, valLen = struct.unpack(b">QI", bytes([0, 0]) + valHead[VSN_BYTES:VAL_HEADER_BYTES])
+                bContext = fileHand.read(valLen)
+                src = 1  # 定长格式无src字段
+
             val = None
             try:
                 if len(bContext) > 0:
                     val = _binary_to_term(1, bContext)
             except:
                 logging.error(
-                    f"bin_err:rNum:{row_num},key:{key},valLen:{valLen},valIdx:{idx},bin1:{len(bContext)},bin2:{int_array(blockValBin)},val:{int_array(bContext)}"
+                    f"bin_err:rNum:{row_num},key:{key},valLen:{valLen},bin1:{len(bContext)},val:{int_array(bContext)}"
                 )
             timeFormat: datetime = datetime.fromtimestamp(utc // 1000)
             ext_info: dict = {
@@ -403,6 +424,10 @@ class DbWindow(tkinter.Toplevel):
 
         self.txtCont.configure(xscrollcommand=hscroll.set)
         hscroll.pack(side="bottom", fill=tkinter.X)
+        self.format_var = tkinter.StringVar(value=self.binFile.format_type)
+        tkinter.Radiobutton(self.top, text="变长", variable=self.format_var, value="variable", command=self._on_format_change).pack(side="left")
+        tkinter.Radiobutton(self.top, text="定长", variable=self.format_var, value="fixed", command=self._on_format_change).pack(side="left")
+        tkinter.Label(self.top, text=" | ").pack(side="left")
         tkinter.Button(self.top, text="打开表文件", command=self.choose_tab_file).pack(
             side="left"
         )
@@ -512,6 +537,9 @@ class DbWindow(tkinter.Toplevel):
             ]
             highlight_word(wordColor, self.txtCont)
         logging.info(f"read start2")
+
+    def _on_format_change(self):
+        self.binFile.format_type = self.format_var.get()
 
     # 显示保存界面
     def disp_save(self):

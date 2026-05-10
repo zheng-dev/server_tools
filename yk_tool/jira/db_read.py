@@ -428,6 +428,10 @@ class DbWindow(tkinter.Toplevel):
         tkinter.Radiobutton(self.top, text="变长", variable=self.format_var, value="variable", command=self._on_format_change).pack(side="left")
         tkinter.Radiobutton(self.top, text="定长", variable=self.format_var, value="fixed", command=self._on_format_change).pack(side="left")
         tkinter.Label(self.top, text=" | ").pack(side="left")
+        self.src_var = tkinter.StringVar(value="有src" if self.binFile.is_have_src else "无src")
+        tkinter.Radiobutton(self.top, text="有src", variable=self.src_var, value="有src", command=self._on_src_change).pack(side="left")
+        tkinter.Radiobutton(self.top, text="无src", variable=self.src_var, value="无src", command=self._on_src_change).pack(side="left")
+        tkinter.Label(self.top, text=" | ").pack(side="left")
         tkinter.Button(self.top, text="打开表文件", command=self.choose_tab_file).pack(
             side="left"
         )
@@ -498,6 +502,7 @@ class DbWindow(tkinter.Toplevel):
         self.txtCont.delete(1.0, tkinter.END)
         accumulated_text: str = ""
         logging.info(f"read start1")
+        self._on_src_change()
         for selP in sp:
             # self.txtCont.insert(tkinter.CURRENT, f"\n===={selP}=====\n")
             accumulated_text += f"\n===={selP}=====\n" + self.binFile.open_read(selP)
@@ -540,6 +545,9 @@ class DbWindow(tkinter.Toplevel):
 
     def _on_format_change(self):
         self.binFile.format_type = self.format_var.get()
+
+    def _on_src_change(self):
+        self.binFile.is_have_src = (self.src_var.get() == "有src")
 
     # 显示保存界面
     def disp_save(self):

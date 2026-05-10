@@ -222,6 +222,18 @@ class MyJira:
             webbrowser.open("t.htm")
 
 
+def get_resource_path(relative_path):
+    """获取资源文件绝对路径，用于打包后的程序访问资源文件"""
+    try:
+        # PyInstaller 创建的临时文件夹，存放资源文件
+        base_path = sys._MEIPASS
+    except Exception:
+        # 没有打包或者不是通过 PyInstaller 打包
+        base_path = os.path.dirname(os.path.abspath(__file__))
+
+    return os.path.join(base_path, relative_path)
+
+
 ##
 def main():
     logging.info("main_win")
@@ -241,7 +253,9 @@ def main():
             self.geometry("260x210+900+110")  # #窗口位置500后面是字母x
             self.attributes("-topmost", 1)
             self.resizable(False, False)
-            self.iconphoto(True, tkinter.PhotoImage(file="a.png"))
+            self.iconphoto(
+                True, tkinter.PhotoImage(file=get_resource_path("res/a.png"))
+            )
 
             self.l1 = scrolledtext.ScrolledText(self, height=20, width=38)
             self.l1.pack(side=tkinter.LEFT, fill="both", expand=True)
@@ -259,7 +273,7 @@ def main():
 
         def update(self):
             r: tuple[list[str], int] = self.jira.jira()
-            (r1, ms) = r
+            r1, ms = r
             if len(r1) > 0:
                 tStr = time.strftime(
                     f"==%m/%d %H:%M:%S num:{len(r1)}==\n", time.localtime()

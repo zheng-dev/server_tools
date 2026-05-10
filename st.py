@@ -111,7 +111,7 @@ def main_work():
     """从xls里导出工作周报txt"""
     import csv, os
 
-    os.chdir("local_dir")
+    os.chdir(".local")
     filePath: str = "C:\\Users\\Administrator\\Downloads\\Sheet1.csv"
     with open(filePath, newline="", encoding="utf-8-sig") as csvfile:
         ret: dict[str, list[str]] = {}

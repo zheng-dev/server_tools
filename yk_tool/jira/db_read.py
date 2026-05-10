@@ -235,7 +235,7 @@ def find_window(parent, findStr: str, matchStr: str):
     root = tkinter.Toplevel(parent)
     root.title(f"yk db表数据-->{findStr}")  # #窗口标题
     root.geometry("1000x490")  # #窗口位置500后面是字母x
-    root.iconbitmap(get_resource_path("a.ico"))
+    root.iconbitmap(get_resource_path("res/a.ico"))
     # root.iconphoto(True, tkinter.PhotoImage(None, data=PNG))
     root.lift()
 
@@ -256,7 +256,7 @@ class TimeToolWindow(tkinter.Tk):
         self.logNum: int = 0
         self.title("yk工具")
         self.geometry("600x400+500+110")
-        self.iconbitmap(get_resource_path("a.ico"))
+        self.iconbitmap(get_resource_path("res/a.ico"))
         # self.iconphoto(True, tkinter.PhotoImage(None, data=PNG))
 
         row1 = tkinter.Frame(self, height=3)
@@ -366,7 +366,7 @@ class DbWindow(tkinter.Toplevel):
         super().__init__(parent)
         self.title("yk db表数据")  # #窗口标题
         self.geometry("1200x490")  # #窗口位置500后面是字母x
-        self.iconbitmap(get_resource_path("a.ico"))
+        self.iconbitmap(get_resource_path("res/a.ico"))
         # self.iconphoto(True, tkinter.PhotoImage(None, data=PNG))
         self.binPath: str = ""
         self.binFile = BinFile()
@@ -531,7 +531,7 @@ def get_resource_path(relative_path):
         base_path = sys._MEIPASS
     except Exception:
         # 没有打包或者不是通过 PyInstaller 打包
-        base_path = os.path.abspath(".")
+        base_path = os.path.dirname(os.path.abspath(__file__))
 
     return os.path.join(base_path, relative_path)
 
